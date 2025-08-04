@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 from TexSoup import TexSoup
 
+
 class LaTeXToInteractiveConverter:
     def __init__(self):
         self.definitions = {}
@@ -29,13 +30,13 @@ class LaTeXToInteractiveConverter:
         input_path = Path(input_path)
 
         if output_path is None:
-            output_path = input_path.with_suffix('.html')
+            output_path = input_path.with_suffix(".html")
         else:
             output_path = Path(output_path)
 
         # Read input file
         try:
-            with open(input_path, 'r', encoding='utf-8') as f:
+            with open(input_path, "r", encoding="utf-8") as f:
                 latex_content = f.read()
         except FileNotFoundError:
             print(f"Error: File '{input_path}' not found.")
@@ -52,7 +53,7 @@ class LaTeXToInteractiveConverter:
 
         # Write output file
         try:
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 f.write(full_html)
             print(f"✅ Successfully converted '{input_path}' to '{output_path}'")
             return True
@@ -73,59 +74,59 @@ class LaTeXToInteractiveConverter:
 
         # Step 2: Parse theorems, lemmas, corollaries
         html = re.sub(
-            r'\\begin\{theorem\}(.*?)\\end\{theorem\}',
+            r"\\begin\{theorem\}(.*?)\\end\{theorem\}",
             self._convert_theorem,
             html,
-            flags=re.DOTALL
+            flags=re.DOTALL,
         )
 
         html = re.sub(
-            r'\\begin\{lemma\}(.*?)\\end\{lemma\}',
+            r"\\begin\{lemma\}(.*?)\\end\{lemma\}",
             self._convert_lemma,
             html,
-            flags=re.DOTALL
+            flags=re.DOTALL,
         )
 
         html = re.sub(
-            r'\\begin\{corollary\}(.*?)\\end\{corollary\}',
+            r"\\begin\{corollary\}(.*?)\\end\{corollary\}",
             self._convert_corollary,
             html,
-            flags=re.DOTALL
+            flags=re.DOTALL,
         )
 
         # Step 3: Parse proofs (make them collapsible)
         html = re.sub(
-            r'\\begin\{proof\}(.*?)\\end\{proof\}',
+            r"\\begin\{proof\}(.*?)\\end\{proof\}",
             self._convert_proof,
             html,
-            flags=re.DOTALL
+            flags=re.DOTALL,
         )
 
         # Step 3.5: Handle lists
         html = re.sub(
-            r'\\begin\{itemize\}(.*?)\\end\{itemize\}',
+            r"\\begin\{itemize\}(.*?)\\end\{itemize\}",
             self._convert_itemize,
             html,
-            flags=re.DOTALL
+            flags=re.DOTALL,
         )
 
         html = re.sub(
-            r'\\begin\{enumerate\}(.*?)\\end\{enumerate\}',
+            r"\\begin\{enumerate\}(.*?)\\end\{enumerate\}",
             self._convert_enumerate,
             html,
-            flags=re.DOTALL
+            flags=re.DOTALL,
         )
 
         # Step 4: Handle basic formatting - TEXSOUP POWERED!
         html = self._parse_formatting_with_texsoup(html)
 
         # Step 5: Handle basic paragraph breaks
-        html = re.sub(r'\n\s*\n', '</p>\n<p>', html)
-        html = '<p>' + html + '</p>'
+        html = re.sub(r"\n\s*\n", "</p>\n<p>", html)
+        html = "<p>" + html + "</p>"
 
         # Step 6: Handle references
-        html = re.sub(r'\\ref\{([^}]+)\}', self._convert_ref, html)
-        html = re.sub(r'\\eqref\{([^}]+)\}', self._convert_eqref, html)
+        html = re.sub(r"\\ref\{([^}]+)\}", self._convert_ref, html)
+        html = re.sub(r"\\eqref\{([^}]+)\}", self._convert_eqref, html)
 
         # Step 7: Make defined terms interactive (do this last)
         html = self._make_terms_interactive(html)
@@ -134,7 +135,7 @@ class LaTeXToInteractiveConverter:
 
     def _remove_latex_comments(self, text):
         """Remove LaTeX comments (lines starting with %)"""
-        lines = text.split('\n')
+        lines = text.split("\n")
         filtered_lines = []
 
         for line in lines:
@@ -142,9 +143,9 @@ class LaTeXToInteractiveConverter:
             result_line = ""
             i = 0
             while i < len(line):
-                if line[i] == '%':
+                if line[i] == "%":
                     # Check if it's escaped with backslash
-                    if i > 0 and line[i-1] == '\\':
+                    if i > 0 and line[i - 1] == "\\":
                         # It's escaped (\%), keep it
                         result_line += line[i]
                     else:
@@ -158,33 +159,33 @@ class LaTeXToInteractiveConverter:
             if result_line.strip():
                 filtered_lines.append(result_line)
 
-        return '\n'.join(filtered_lines)
+        return "\n".join(filtered_lines)
 
     def _strip_document_structure(self, text):
         """Remove LaTeX document structure (documentclass, packages, begin/end document)"""
         # Remove documentclass
-        text = re.sub(r'\\documentclass(\[.*?\])?\{.*?\}', '', text)
+        text = re.sub(r"\\documentclass(\[.*?\])?\{.*?\}", "", text)
 
         # Remove usepackage commands
-        text = re.sub(r'\\usepackage(\[.*?\])?\{.*?\}', '', text)
+        text = re.sub(r"\\usepackage(\[.*?\])?\{.*?\}", "", text)
 
         # Remove begin/end document
-        text = re.sub(r'\\begin\{document\}', '', text)
-        text = re.sub(r'\\end\{document\}', '', text)
+        text = re.sub(r"\\begin\{document\}", "", text)
+        text = re.sub(r"\\end\{document\}", "", text)
 
         # Remove other common preamble commands
-        text = re.sub(r'\\author\{.*?\}', '', text)
-        text = re.sub(r'\\date\{.*?\}', '', text)
-        text = re.sub(r'\\maketitle', '', text)
+        text = re.sub(r"\\author\{.*?\}", "", text)
+        text = re.sub(r"\\date\{.*?\}", "", text)
+        text = re.sub(r"\\maketitle", "", text)
 
         # Clean up multiple newlines
-        text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
+        text = re.sub(r"\n\s*\n\s*\n+", "\n\n", text)
 
         return text.strip()
 
     def _remove_latex_comments(self, text):
         """Remove LaTeX comments (lines starting with %)"""
-        lines = text.split('\n')
+        lines = text.split("\n")
         filtered_lines = []
 
         for line in lines:
@@ -193,9 +194,9 @@ class LaTeXToInteractiveConverter:
             result_line = ""
             i = 0
             while i < len(line):
-                if line[i] == '%':
+                if line[i] == "%":
                     # Check if it's escaped with backslash
-                    if i > 0 and line[i-1] == '\\':
+                    if i > 0 and line[i - 1] == "\\":
                         # It's escaped (\%), keep it
                         result_line += line[i]
                     else:
@@ -209,7 +210,7 @@ class LaTeXToInteractiveConverter:
             if result_line.strip():
                 filtered_lines.append(result_line)
 
-        return '\n'.join(filtered_lines)
+        return "\n".join(filtered_lines)
 
     def _parse_definitions_with_texsoup(self, text):
         """Parse definitions using TexSoup for perfect nested brace handling"""
@@ -220,13 +221,13 @@ class LaTeXToInteractiveConverter:
         # (to maintain string positions when replacing)
         defn_nodes = []
         for item in soup:
-            if hasattr(item, 'name') and item.name == 'defn':
+            if hasattr(item, "name") and item.name == "defn":
                 # Extract the term and definition
                 contents = item.contents
                 if len(contents) >= 2:
                     term = str(contents[0]).strip()
                     definition_parts = contents[1:]
-                    definition = ''.join(str(part) for part in definition_parts).strip()
+                    definition = "".join(str(part) for part in definition_parts).strip()
 
                     # Store the definition
                     self.definitions[term] = definition
@@ -239,9 +240,9 @@ class LaTeXToInteractiveConverter:
 
         # Replace from end to beginning to maintain positions
         for start_pos, end_pos, definition in sorted(defn_nodes, reverse=True):
-            replacement = f'''<div class="definition">
+            replacement = f"""<div class="definition">
                 <strong>Definition:</strong> {definition}
-            </div>'''
+            </div>"""
             result = result[:start_pos] + replacement + result[end_pos:]
 
         return result
@@ -253,21 +254,21 @@ class LaTeXToInteractiveConverter:
 
         # Define our formatting commands and their HTML conversions
         format_commands = {
-            'title': lambda content: f'<h1>{content}</h1>',
-            'section': lambda content: f'<h2>{content}</h2>',
-            'subsection': lambda content: f'<h3>{content}</h3>',
-            'textbf': lambda content: f'<strong>{content}</strong>',
-            'textit': lambda content: f'<em>{content}</em>',
-            'emph': lambda content: f'<em>{content}</em>',
+            "title": lambda content: f"<h1>{content}</h1>",
+            "section": lambda content: f"<h2>{content}</h2>",
+            "subsection": lambda content: f"<h3>{content}</h3>",
+            "textbf": lambda content: f"<strong>{content}</strong>",
+            "textit": lambda content: f"<em>{content}</em>",
+            "emph": lambda content: f"<em>{content}</em>",
         }
 
         # Find all formatting commands and collect replacements
         replacements = []
         for item in soup:
-            if hasattr(item, 'name') and item.name in format_commands:
+            if hasattr(item, "name") and item.name in format_commands:
                 # Extract the content
                 if item.contents:
-                    content = ''.join(str(part) for part in item.contents).strip()
+                    content = "".join(str(part) for part in item.contents).strip()
 
                     # Find position in original text
                     item_str = str(item)
@@ -275,7 +276,9 @@ class LaTeXToInteractiveConverter:
                     if pos != -1:
                         # Get the HTML replacement
                         html_replacement = format_commands[item.name](content)
-                        replacements.append((pos, pos + len(item_str), html_replacement))
+                        replacements.append(
+                            (pos, pos + len(item_str), html_replacement)
+                        )
 
         # Replace from end to beginning to maintain positions
         for start_pos, end_pos, replacement in sorted(replacements, reverse=True):
@@ -288,13 +291,15 @@ class LaTeXToInteractiveConverter:
         content = match.group(1).strip()
 
         # Check if there's a label in the content
-        label_match = re.search(r'\\label\{([^}]+)\}', content)
+        label_match = re.search(r"\\label\{([^}]+)\}", content)
         if label_match:
             label = label_match.group(1)
             # Remove the label from the content
-            content = re.sub(r'\\label\{[^}]+\}', '', content).strip()
+            content = re.sub(r"\\label\{[^}]+\}", "", content).strip()
             # Store the theorem statement for references
-            self.theorem_statements[label] = f"<strong>Theorem {self.theorem_counter}.</strong> {content}"
+            self.theorem_statements[label] = (
+                f"<strong>Theorem {self.theorem_counter}.</strong> {content}"
+            )
 
         theorem_id = f"theorem-{self.theorem_counter}"
         self.theorems[theorem_id] = content
@@ -311,13 +316,15 @@ class LaTeXToInteractiveConverter:
         content = match.group(1).strip()
 
         # Check if there's a label in the content
-        label_match = re.search(r'\\label\{([^}]+)\}', content)
+        label_match = re.search(r"\\label\{([^}]+)\}", content)
         if label_match:
             label = label_match.group(1)
             # Remove the label from the content
-            content = re.sub(r'\\label\{[^}]+\}', '', content).strip()
+            content = re.sub(r"\\label\{[^}]+\}", "", content).strip()
             # Store the lemma statement for references
-            self.theorem_statements[label] = f"<strong>Lemma {self.lemma_counter}.</strong> {content}"
+            self.theorem_statements[label] = (
+                f"<strong>Lemma {self.lemma_counter}.</strong> {content}"
+            )
 
         lemma_id = f"lemma-{self.lemma_counter}"
         self.theorems[lemma_id] = content
@@ -334,13 +341,15 @@ class LaTeXToInteractiveConverter:
         content = match.group(1).strip()
 
         # Check if there's a label in the content
-        label_match = re.search(r'\\label\{([^}]+)\}', content)
+        label_match = re.search(r"\\label\{([^}]+)\}", content)
         if label_match:
             label = label_match.group(1)
             # Remove the label from the content
-            content = re.sub(r'\\label\{[^}]+\}', '', content).strip()
+            content = re.sub(r"\\label\{[^}]+\}", "", content).strip()
             # Store the corollary statement for references
-            self.theorem_statements[label] = f"<strong>Corollary {self.corollary_counter}.</strong> {content}"
+            self.theorem_statements[label] = (
+                f"<strong>Corollary {self.corollary_counter}.</strong> {content}"
+            )
 
         corollary_id = f"corollary-{self.corollary_counter}"
         self.theorems[corollary_id] = content
@@ -356,32 +365,32 @@ class LaTeXToInteractiveConverter:
         """Convert proof environment to collapsible HTML"""
         content = match.group(1).strip()
 
-        return f'''<details>
+        return f"""<details>
             <summary>Proof</summary>
             <div class="proof-content">{content} □</div>
-        </details>'''
+        </details>"""
 
     def _convert_itemize(self, match):
         """Convert itemize environment to HTML"""
         content = match.group(1).strip()
         # Convert \item to <li>
-        items = re.split(r'\\item\s*', content)
+        items = re.split(r"\\item\s*", content)
         # Remove empty first item (before first \item)
         items = [item.strip() for item in items if item.strip()]
 
-        html_items = ''.join(f'<li>{item}</li>' for item in items)
-        return f'<ul>{html_items}</ul>'
+        html_items = "".join(f"<li>{item}</li>" for item in items)
+        return f"<ul>{html_items}</ul>"
 
     def _convert_enumerate(self, match):
         """Convert enumerate environment to HTML"""
         content = match.group(1).strip()
         # Convert \item to <li>
-        items = re.split(r'\\item\s*', content)
+        items = re.split(r"\\item\s*", content)
         # Remove empty first item (before first \item)
         items = [item.strip() for item in items if item.strip()]
 
-        html_items = ''.join(f'<li>{item}</li>' for item in items)
-        return f'<ol>{html_items}</ol>'
+        html_items = "".join(f"<li>{item}</li>" for item in items)
+        return f"<ol>{html_items}</ol>"
 
     def _convert_ref(self, match):
         """Convert ref to interactive reference"""
@@ -390,7 +399,7 @@ class LaTeXToInteractiveConverter:
             ref_text = self._get_theorem_ref_text(label)
             return f'<span class="theorem-ref" data-ref="{label}">{ref_text}</span>'
         else:
-            return f'<span class="unresolved-ref">??</span>'
+            return '<span class="unresolved-ref">??</span>'
 
     def _convert_eqref(self, match):
         """Convert eqref to interactive reference"""
@@ -399,13 +408,13 @@ class LaTeXToInteractiveConverter:
             ref_text = self._get_theorem_ref_text(label)
             return f'(<span class="theorem-ref" data-ref="{label}">{ref_text}</span>)'
         else:
-            return f'(<span class="unresolved-ref">??</span>)'
+            return '(<span class="unresolved-ref">??</span>)'
 
     def _get_theorem_ref_text(self, label):
         """Extract the full reference text (e.g. 'Theorem 1', 'Lemma 2') from a theorem statement"""
         statement = self.theorem_statements.get(label, "")
         # Extract "Theorem 1" or "Lemma 2" etc. from "Theorem 1. statement..."
-        match = re.search(r'(Theorem|Lemma|Corollary)\s+(\d+)', statement)
+        match = re.search(r"(Theorem|Lemma|Corollary)\s+(\d+)", statement)
         if match:
             return f"{match.group(1)} {match.group(2)}"
         return "??"
@@ -414,7 +423,7 @@ class LaTeXToInteractiveConverter:
         """Extract just the number from a theorem statement"""
         statement = self.theorem_statements.get(label, "")
         # Extract number from "Theorem 1." or "Lemma 2." etc.
-        match = re.search(r'(Theorem|Lemma|Corollary)\s+(\d+)', statement)
+        match = re.search(r"(Theorem|Lemma|Corollary)\s+(\d+)", statement)
         if match:
             return match.group(2)
         return "??"
@@ -428,7 +437,7 @@ class LaTeXToInteractiveConverter:
             # Escape special regex characters in the term
             escaped_term = re.escape(term)
             # Simple pattern to match terms - we'll check for existing spans in the replacement function
-            pattern = r'\b' + escaped_term + r's?\b'
+            pattern = r"\b" + escaped_term + r"s?\b"
 
             def replace_term(match):
                 matched_text = match.group(0)
@@ -438,7 +447,7 @@ class LaTeXToInteractiveConverter:
 
                 # Simple check: if there's an unclosed defined-term span tag before this match
                 open_spans = preceding_context.count('<span class="defined-term"')
-                close_spans = preceding_context.count('</span>')
+                close_spans = preceding_context.count("</span>")
                 if open_spans > close_spans:
                     # We're likely inside a span already, don't wrap
                     return matched_text
@@ -457,7 +466,7 @@ class LaTeXToInteractiveConverter:
         theorems_json = json.dumps(self.theorems)
         theorem_statements_json = json.dumps(self.theorem_statements)
 
-        return f'''<!DOCTYPE html>
+        return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -674,7 +683,7 @@ class LaTeXToInteractiveConverter:
         }});
     </script>
 </body>
-</html>'''
+</html>"""
 
 
 def main_cli():

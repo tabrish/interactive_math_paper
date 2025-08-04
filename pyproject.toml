@@ -12,3 +12,8 @@ dependencies = [
 
 [project.scripts]
 convert-paper = "interactive_math_paper:main_cli"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.7",
+]
