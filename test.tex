@@ -1,0 +1,129 @@
+% Simple LaTeX Template for Interactive HTML Conversion
+% Only includes features supported by our converter
+
+\documentclass{article}
+% Basic math packages - these won't affect our conversion but help LaTeX compile
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+% These will be ignored by our converter but help with LaTeX compilation
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\begin{document} 
+% ==== SUPPORTED COMMANDS ====
+
+% Title and structure
+\title{My Interactive Paper}
+
+\section{Introduction}
+
+
+\defn{widget}{A widget is a mathematical object with properties $x^2 + y^2 = 1$}
+
+
+\subsection{Background}
+
+Widgets are useful because:
+\begin{itemize}
+\item They satisfy important equations in $\mathbb{R}$
+\item They work well with other \textbf{mathematical objects} in $\mathcal{L}^2$ spaces
+\item They are \emph{easy to understand} using $\mathfrak{g}$-modules
+\end{itemize}
+
+
+
+\begin{enumerate}
+\item Numbered item
+\item Another numbered item
+\end{enumerate}
+
+% Math environments
+\begin{equation}
+E = mc^2
+\end{equation}
+
+\begin{equation*}
+\int_0^1 f(x) dx = F(1) - F(0)
+\end{equation*}
+
+\begin{align}
+x &= y + z \\
+a &= b + c
+\end{align}
+
+\begin{align*}
+\nabla \cdot \mathbf{E} &= \frac{\rho}{\epsilon_0} \\
+\nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t}
+\end{align*}
+
+% Theorems with labels
+\begin{theorem}\label{thm:main}
+For any widget $w \in \mathbb{C}$, we have $\int_0^1 w(t) dt > 0$ when considered in $\mathscr{L}(\mathcal{H})$.
+\end{theorem}
+
+\begin{proof}
+The proof follows from the definition of widgets and properties of $\mathfrak{sl}_2(\mathbb{C})$.
+\end{proof}
+
+\begin{lemma}\label{lem:helper}
+Every widget has the property that $|w| \leq 1$ for $w \in \mathbb{R}$.
+\end{lemma}
+
+\begin{proof}
+This follows directly from the definition since $x^2 + y^2 = 1$ implies $|w| = 1$ in $\mathbb{R}$.
+\end{proof}
+
+% References
+We can reference \ref{thm:main} and \ref{lem:helper} in the text.
+
+% Math fonts (work automatically with MathJax)
+% $\mathbb{R}$, $\mathbb{C}$, $\mathbb{Z}$, $\mathbb{Q}$, $\mathbb{N}$
+% $\mathcal{L}$, $\mathcal{H}$, $\mathcal{F}$, $\mathcal{O}$
+% $\mathfrak{g}$, $\mathfrak{h}$, $\mathfrak{sl}$
+% $\mathscr{L}$, $\mathscr{F}$
+% $\operatorname{dim}$, $\operatorname{ker}$, $\operatorname{rank}$
+
+\section{Applications in $\mathcal{F}$-algebras}
+
+By combining \ref{thm:main} and \ref{lem:helper}, we see that widgets are both 
+positive (when integrated) and bounded in any $\mathcal{L}^p$ space.
+
+\section{Conclusion}
+
+Your conclusion here.
+
+\end{document}
+
+% ==== CONVERSION NOTES ====
+%
+% SUPPORTED:
+% - \title{}, \section{}, \subsection{}
+% - \defn{term}{definition} (our custom command)
+% - \textbf{}, \emph{}, \textit{}
+% - \begin{itemize}, \begin{enumerate} with \item
+% - \begin{equation}, \begin{equation*}, \begin{align}, \begin{align*}
+% - \begin{theorem}, \begin{lemma}, \begin{corollary} with \label{}
+% - \begin{proof}
+% - \ref{}, \eqref{}
+% - All standard math notation in $ $ or $$ $$
+% - Math fonts: \mathbb{}, \mathcal{}, \mathfrak{}, \mathscr{}, \operatorname{}
+%
+% NOT SUPPORTED (will need manual conversion):
+% - \cite{}, \bibliography{}, \bibliographystyle{}
+% - \footnote{}
+% - \url{}, \href{}
+% - Custom macros and \newcommand
+% - Complex packages (tikz, pgfplots, etc.)
+% - \includegraphics, tables
+% - Custom theorem environments
+% - \author{}, \date{}, \maketitle
+%
+% TO CONVERT YOUR PAPER:
+% 1. Copy your content into this template
+% 2. Replace \newtheorem definitions with our supported environments
+% 3. Convert custom definitions to \defn{term}{definition}
+% 4. Remove unsupported commands or replace with supported equivalents
+% 5. Test that it compiles in LaTeX
+% 6. Run through our converter!
