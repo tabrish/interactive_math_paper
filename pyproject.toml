@@ -1,0 +1,19 @@
+[project]
+name = "interactive-math-paper"
+version = "0.0.1"
+requires-python = ">=3.12"
+authors = [
+    {name = "Tabrish"},
+    {name = "Hanno von Bergen"},
+]
+dependencies = [
+    "texsoup>=0.3.1",
+]
+
+[project.scripts]
+convert-paper = "interactive_math_paper:main_cli"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.7",
+]
