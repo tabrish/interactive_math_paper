@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Mathematical Paper</title>
+    
+    <!-- MathJax for mathematical notation -->
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$']],
+            displayMath: [['$$', '$$']]
+        },
+        startup: {
+            ready: function () {
+                MathJax.startup.defaultReady();
+                // Process math after page loads
+                MathJax.typesetPromise().then(() => {
+                    console.log('MathJax rendering complete');
+                });
+            }
+        }
+    };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    
+    <style>
+        body {
+            font-family: "Computer Modern", "Latin Modern", serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #fefefe;
+        }
+        
+        .definition {
+            background-color: #f0f8ff;
+            border: 1px solid #b0d4f1;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .theorem {
+            background-color: #f9f9f9;
+            border-left: 4px solid #333;
+            padding: 15px;
+            margin: 15px 0;
+            font-style: italic;
+        }
+        
+        .theorem-label {
+            font-weight: bold;
+            font-style: normal;
+        }
+        
+        .defined-term {
+            color: #0066cc;
+            cursor: pointer;
+            border-bottom: 1px dotted #0066cc;
+            position: relative;
+        }
+        
+        .defined-term:hover {
+            background-color: #e6f3ff;
+        }
+        
+        .theorem-ref {
+            color: #cc6600;
+            cursor: pointer;
+            border-bottom: 1px dotted #cc6600;
+            position: relative;
+        }
+        
+        .theorem-ref:hover {
+            background-color: #fff3e6;
+        }
+        
+        .unresolved-ref {
+            color: #cc0000;
+            font-weight: bold;
+        }
+        
+        .definition-popup {
+            position: absolute;
+            background: white;
+            border: 2px solid #0066cc;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-width: 300px;
+            font-size: 14px;
+            line-height: 1.4;
+            display: none;
+        }
+        
+        details {
+            margin: 15px 0;
+        }
+        
+        summary {
+            font-weight: bold;
+            cursor: pointer;
+            color: #0066cc;
+            padding: 5px 0;
+        }
+        
+        summary:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .proof-content {
+            background-color: #fafafa;
+            border-left: 3px solid #ddd;
+            padding: 10px 15px;
+            margin-top: 10px;
+        }
+        
+        h1, h2, h3 {
+            color: #333;
+        }
+        
+        p {
+            margin: 1em 0;
+        }
+    </style>
+</head>
+<body>
+    <p><h1>My Interactive Paper</h1>
+<h2>Introduction</h2>
+<div class="definition">
+                <strong>Definition:</strong> A <span class="defined-term" data-term="widget">widget</span> is a mathematical object with properties $x^2 + y^2 = 1$
+            </div>
+<h3>Background</h3>
+<span class="defined-term" data-term="widget">Widgets</span> are useful because:
+<ul><li>They satisfy important equations in $\mathbb{R}$</li><li>They work well with other <strong>mathematical objects</strong> in $\mathcal{L}^2$ spaces</li><li>They are <em>easy to understand</em> using $\mathfrak{g}$-modules</li></ul>
+<ol><li>Numbered item</li><li>Another numbered item</li></ol>
+\begin{equation}
+E = mc^2
+\end{equation}
+\begin{equation*}
+\int_0^1 f(x) dx = F(1) - F(0)
+\end{equation*}
+\begin{align}
+x &= y + z \\
+a &= b + c
+\end{align}
+\begin{align*}
+\nabla \cdot \mathbf{E} &= \frac{\rho}{\epsilon_0} \\
+\nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t}
+\end{align*}
+<div class="theorem" id="thm:main">
+            <span class="theorem-label">Theorem 1.</span> For any <span class="defined-term" data-term="widget">widget</span> $w \in \mathbb{C}$, we have $\int_0^1 w(t) dt > 0$ when considered in $\mathscr{L}(\mathcal{H})$.
+        </div>
+<details>
+            <summary>Proof</summary>
+            <div class="proof-content">The proof follows from the definition of <span class="defined-term" data-term="widget">widgets</span> and properties of $\mathfrak{sl}_2(\mathbb{C})$. □</div>
+        </details>
+<div class="theorem" id="lem:helper">
+            <span class="theorem-label">Lemma 1.</span> Every <span class="defined-term" data-term="widget">widget</span> has the property that $|w| \leq 1$ for $w \in \mathbb{R}$.
+        </div>
+<details>
+            <summary>Proof</summary>
+            <div class="proof-content">This follows directly from the definition since $x^2 + y^2 = 1$ implies $|w| = 1$ in $\mathbb{R}$. □</div>
+        </details>
+We can reference <span class="theorem-ref" data-ref="thm:main">Theorem 1</span> and <span class="theorem-ref" data-ref="lem:helper">Lemma 1</span> in the text.
+<h2>Applications in $\mathcal{F}$-algebras</h2>
+By combining <span class="theorem-ref" data-ref="thm:main">Theorem 1</span> and <span class="theorem-ref" data-ref="lem:helper">Lemma 1</span>, we see that <span class="defined-term" data-term="widget">widgets</span> are both 
+positive (when integrated) and bounded in any $\mathcal{L}^p$ space.
+<h2>Conclusion</h2>
+Your conclusion here.</p>
+    
+    <script>
+        // Data from LaTeX conversion
+        const definitions = {"widget": "A widget is a mathematical object with properties $x^2 + y^2 = 1$"};
+        const theorems = {"theorem-1": "For any widget $w \\in \\mathbb{C}$, we have $\\int_0^1 w(t) dt > 0$ when considered in $\\mathscr{L}(\\mathcal{H})$.", "lemma-1": "Every widget has the property that $|w| \\leq 1$ for $w \\in \\mathbb{R}$."};
+        const theoremStatements = {"thm:main": "<strong>Theorem 1.</strong> For any widget $w \\in \\mathbb{C}$, we have $\\int_0^1 w(t) dt > 0$ when considered in $\\mathscr{L}(\\mathcal{H})$.", "lem:helper": "<strong>Lemma 1.</strong> Every widget has the property that $|w| \\leq 1$ for $w \\in \\mathbb{R}$."};
+        
+        // Create popup element
+        const popup = document.createElement('div');
+        popup.className = 'definition-popup';
+        document.body.appendChild(popup);
+        
+        // Add interactivity to defined terms
+        document.querySelectorAll('.defined-term').forEach(term => {
+            term.addEventListener('mouseenter', function() {
+                const termName = this.getAttribute('data-term');
+                const definition = definitions[termName];
+                
+                if (definition) {
+                    popup.innerHTML = `<strong>${termName}:</strong> ${definition}`;
+                    showPopup(this);
+                    
+                    // Process any math in the popup with MathJax
+                    if (window.MathJax && window.MathJax.typesetPromise) {
+                        MathJax.typesetPromise([popup]).catch((err) => {
+                            console.log('MathJax error in popup:', err);
+                        });
+                    }
+                }
+            });
+            
+            term.addEventListener('mouseleave', function() {
+                popup.style.display = 'none';
+            });
+        });
+        
+        // Add interactivity to theorem references
+        document.querySelectorAll('.theorem-ref').forEach(ref => {
+            ref.addEventListener('mouseenter', function() {
+                const refLabel = this.getAttribute('data-ref');
+                const statement = theoremStatements[refLabel];
+                
+                if (statement) {
+                    popup.innerHTML = statement;
+                    showPopup(this);
+                    
+                    // Process any math in the popup with MathJax
+                    if (window.MathJax && window.MathJax.typesetPromise) {
+                        MathJax.typesetPromise([popup]).catch((err) => {
+                            console.log('MathJax error in theorem popup:', err);
+                        });
+                    }
+                }
+            });
+            
+            ref.addEventListener('mouseleave', function() {
+                popup.style.display = 'none';
+            });
+        });
+        
+        function showPopup(element) {
+            popup.style.display = 'block';
+            
+            const rect = element.getBoundingClientRect();
+            popup.style.left = rect.left + window.scrollX + 'px';
+            popup.style.top = (rect.bottom + window.scrollY + 2) + 'px';  // Just 2px below the text
+            
+            // Adjust if popup would go off screen
+            const popupRect = popup.getBoundingClientRect();
+            if (popupRect.right > window.innerWidth) {
+                popup.style.left = (window.innerWidth - popupRect.width - 10 + window.scrollX) + 'px';
+            }
+            if (popupRect.bottom > window.innerHeight) {
+                popup.style.top = (rect.top + window.scrollY - popupRect.height - 2) + 'px';  // 2px above if no room below
+            }
+        }
+        
+        // Hide popup when clicking elsewhere
+        document.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('defined-term')) {
+                popup.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
