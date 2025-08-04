@@ -1,0 +1,8 @@
+[project]
+name = "interactive-math-paper"
+version = "0.0.1"
+requires-python = ">=3.12"
+authors = [
+    {name = "Tabrish"},
+    {name = "Hanno von Bergen"},
+]
