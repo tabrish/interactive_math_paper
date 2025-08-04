@@ -6,3 +6,9 @@ authors = [
     {name = "Tabrish"},
     {name = "Hanno von Bergen"},
 ]
+dependencies = [
+    "texsoup>=0.3.1",
+]
+
+[project.scripts]
+convert-paper = "interactive_math_paper:main_cli"
