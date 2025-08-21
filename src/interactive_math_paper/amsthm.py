@@ -1,7 +1,8 @@
 from typing import Optional, override
-from TexSoup.data import TexEnv, TexCmd, BraceGroup
+from TexSoup.data import TexEnv, TexCmd
 from TexSoup.utils import Token
 from .data import HtmlObject
+
 
 class TheoremEnv(HtmlObject):
     def __init__(self, label: str):
@@ -10,9 +11,10 @@ class TheoremEnv(HtmlObject):
 
     @override
     def to_html(self) -> str:
-        return f'''<div class="theorem">
+        return f"""<div class="theorem">
             <span class="theorem-label">{self.label}.</span> {super().to_html()}
-        </div>'''
+        </div>"""
+
 
 class TheoremConverter:
     def __init__(self):

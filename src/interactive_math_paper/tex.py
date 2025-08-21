@@ -1,10 +1,10 @@
-from dataclasses import dataclass
 from typing import Optional, override
-from TexSoup.data import TexEnv, TexCmd, BraceGroup
+from TexSoup.data import TexCmd, BraceGroup
 from TexSoup.utils import Token
 from TexSoup.tokens import TC
 from .amsthm import TheoremConverter
 from .data import HtmlObject
+
 
 class Proof(HtmlObject):
     def __init__(self):
@@ -17,6 +17,7 @@ class Proof(HtmlObject):
             <div class="proof-content">{super().to_html()} □</div>
         </details>"""
 
+
 class Section(HtmlObject):
     def __init__(self):
         super().__init__("")
@@ -24,6 +25,7 @@ class Section(HtmlObject):
     @override
     def to_html(self) -> str:
         return f"<h2>{self.args[0].to_html()}</h2>"
+
 
 class MathObject(HtmlObject):
     def __init__(self, delimiter: str):
@@ -34,7 +36,8 @@ class MathObject(HtmlObject):
     def to_html(self) -> str:
         return f" {self.delimiter}{super().to_html()}{self.delimiter} "
 
-class TexEnv(HtmlObject):
+
+class MathEnvironment(HtmlObject):
     def __init__(self):
         super().__init__("")
         self.math_commands = ""
@@ -126,13 +129,14 @@ class TexEnv(HtmlObject):
         </html>
         """
 
+
 class ConversionChain:
     def __init__(self, chain: list):
         self.chain = chain
         self.default = [DefaultConversion()]
 
-    def convert_environment(self, env: TexEnv) -> Optional[HtmlObject]:
-        for converter in (self.chain + self.default):
+    def convert_environment(self, env: MathEnvironment) -> Optional[HtmlObject]:
+        for converter in self.chain + self.default:
             converted = converter.convert_environment(env)
             if converted:
                 return converted
@@ -145,26 +149,27 @@ class ConversionChain:
                     if "amsthm" in arg.contents[0]:
                         self.chain.append(TheoremConverter())
             return HtmlObject("")
-        for converter in (self.chain + self.default):
+        for converter in self.chain + self.default:
             converted = converter.convert_command(cmd)
             if converted:
                 return converted
         return None
 
     def convert_token(self, token: Token) -> Optional[HtmlObject]:
-        for converter in (self.chain + self.default):
+        for converter in self.chain + self.default:
             converted = converter.convert_token(token)
             if converted:
                 return converted
         return None
 
+
 class TexConversion:
     def __init__(self):
         self.tex_env = None
 
-    def convert_environment(self, env: TexEnv) -> Optional[HtmlObject]:
+    def convert_environment(self, env: MathEnvironment) -> Optional[HtmlObject]:
         if env.name == "[tex]":
-            self.tex_env = TexEnv()
+            self.tex_env = MathEnvironment()
             return self.tex_env
         if env.name == "$":
             return MathObject("$")
@@ -197,11 +202,12 @@ class TexConversion:
             return HtmlObject(token.text[2:])
         return None
 
+
 class DefaultConversion:
     def __init__(self):
         pass
 
-    def convert_environment(self, env: TexEnv) -> Optional[HtmlObject]:
+    def convert_environment(self, env: MathEnvironment) -> Optional[HtmlObject]:
         print(f"unknown environment {env.name} with args {env.args}")
 
         return HtmlObject("")

@@ -3,7 +3,8 @@ from TexSoup import TexSoup, TexNode
 from TexSoup.data import TexEnv, TexCmd
 from TexSoup.utils import Token
 from pathlib import Path
-from .implementation import HtmlObject, DefaultConversion, TexConversion, ConversionChain
+from .tex import HtmlObject, TexConversion, ConversionChain
+
 
 def parse(node, converter) -> HtmlObject:
     if isinstance(node, TexNode):
@@ -25,6 +26,7 @@ def parse(node, converter) -> HtmlObject:
         return html_object
     raise ValueError(f"unknown object of type {type(node)}")
 
+
 if __name__ == "__main__":
     input_path = "texfiles/main.tex"
     input_path = Path(input_path)
@@ -42,4 +44,4 @@ if __name__ == "__main__":
 
     soup = TexSoup(latex_content)
     with open(output_path, "w", encoding="utf-8") as f:
-        f.write(parse(soup, ConversionChain([TexConversion()])).to_html().replace("<hr><hr>", "<hr>"))
+        f.write(parse(soup, ConversionChain([TexConversion()])).to_html())
