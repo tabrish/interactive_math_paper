@@ -12,6 +12,28 @@ class Abstract(HtmlObject):
     def to_html(self) -> str:
         return f'<div class="abstract"><h3>Abstract</h3>{super().to_html()}</div>'
 
+class Label(Empty):
+    def __init__(self, label: str):
+        super().__init__()
+        self.data = label
+
+    @override
+    def set_parent(self, parent: "HtmlObject"):
+        parent.label(self.data)
+
+class Link(HtmlObject):
+    @override
+    def to_html(self) -> str:
+        return f'<a href="#' + f'{self.args[0].to_html()}">{HtmlObject.get_name(self.args[0].to_html())}</a>'
+
+class HtmlBraceGroup(HtmlObject):
+    def __init__(self):
+        super().__init__()
+        self.visible = False
+
+    @override
+    def to_html(self) -> str:
+        return super().to_html() if not self.visible else f"{{{super().to_html()}}}"
 
 class Enumerate(HtmlObject):
     def __init__(self):
@@ -77,6 +99,12 @@ class MathObject(HtmlObject):
 
     @override
     def to_html(self) -> str:
+        stack = [self]
+        while stack:
+            child = stack.pop()
+            if isinstance(child, HtmlBraceGroup):
+                child.visible = True
+            stack.extend(child.children)
         return f" {self.delimiter}{super().to_html()}{self.delimiter} "
 
 
@@ -240,7 +268,7 @@ class TexConversion:
         if env.name == "BraceGroup":
             if isinstance(env.contents[0], TexCmd) and env.contents[0].name == "em":
                 return EmBraces()
-            return HtmlObject("")
+            return HtmlBraceGroup()
         if env.name == "BracketGroup":
             return HtmlObject("")
         if env.name == "proof":
@@ -273,11 +301,25 @@ class TexConversion:
             return Item()
         if cmd.name == "documentclass":
             return Empty()
+        if cmd.name == "renewcommand" or cmd.name == "newcommand" or cmd.name == "def":
+            self.tex_env.math_commands += str(cmd)
+            return Empty()
+        if cmd.name == "DeclareMathOperator":
+            assert len(cmd.args) == 2, f"declare math operator {str(cmd)} has a bad number of args"
+            operator_cmd = cmd.args[0].contents[0]
+            operator_text = cmd.args[1].contents[0]
+            self.tex_env.math_commands += f"\\newcommand{{{operator_cmd}}}{{\\text{{{operator_text}}}}}"
+            return Empty()
+        if cmd.name == "label":
+            assert len(cmd.args) == 1, f"why does label {cmd} not have exactly one args?"
+            return Label(str(cmd.args[0].contents[0]))
+        if cmd.name == "ref":
+            return Link()
         return None
 
     def convert_token(self, token: Token) -> Optional[HtmlObject]:
         if token.category == TC.Text:
-            return HtmlObject(token.text.replace("\n\n", "<hr>"))
+            return HtmlObject(token.text.replace("\n\n", "<hr>").replace(r"``", "“").replace(r"''", "”"))
         if token.category == TC.Comment:
             return HtmlObject("")
         if token.category == TC.EscapedComment:

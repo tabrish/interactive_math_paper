@@ -7,12 +7,13 @@ from .data import HtmlObject, Empty
 class TheoremEnv(HtmlObject):
     def __init__(self, label: str):
         super().__init__("")
-        self.label = label
+        self.env_label = label
 
     @override
     def to_html(self) -> str:
-        return f"""<div class="theorem">
-            <span class="theorem-label">{self.label}.</span> {super().to_html()}
+        id_text = "" if not self.get_label() else f'id = "{self.get_label()}"'
+        return f"""<div class="theorem" {id_text}>
+            <span class="theorem-label">{self.env_label}.</span> {super().to_html()}
         </div>"""
 
 
