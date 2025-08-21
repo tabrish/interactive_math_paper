@@ -1,7 +1,7 @@
 from typing import Optional, override
 from TexSoup.data import TexEnv, TexCmd
 from TexSoup.utils import Token
-from .data import HtmlObject
+from .data import HtmlObject, Empty
 
 
 class TheoremEnv(HtmlObject):
@@ -23,7 +23,7 @@ class TheoremConverter:
     def convert_command(self, cmd: TexCmd) -> Optional[HtmlObject]:
         if cmd.name == "newtheorem":
             self.labels[cmd.args[0].contents[0]] = cmd.args[1].contents[0]
-            return HtmlObject("")
+            return Empty()
         return None
 
     def convert_environment(self, env: TexEnv) -> Optional[HtmlObject]:

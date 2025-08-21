@@ -1,5 +1,8 @@
+from typing import override
+
+
 class HtmlObject:
-    def __init__(self, content: str):
+    def __init__(self, content: str = ""):
         self.content = content
         self.children = []
         self.args = []
@@ -15,3 +18,12 @@ class HtmlObject:
         for child in self.children:
             html += child.to_html()
         return html
+
+
+class Empty(HtmlObject):
+    def __init__(self):
+        super().__init__("")
+
+    @override
+    def to_html(self) -> str:
+        return ""

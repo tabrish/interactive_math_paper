@@ -2,8 +2,42 @@ from typing import Optional, override
 from TexSoup.data import TexCmd, BraceGroup
 from TexSoup.utils import Token
 from TexSoup.tokens import TC
+from interactive_math_paper.amsmath import AmsMathConverter
 from .amsthm import TheoremConverter
-from .data import HtmlObject
+from .data import HtmlObject, Empty
+
+
+class Abstract(HtmlObject):
+    @override
+    def to_html(self) -> str:
+        return f'<div class="abstract"><h3>Abstract</h3>{super().to_html()}</div>'
+
+
+class Enumerate(HtmlObject):
+    def __init__(self):
+        super().__init__("")
+
+    @override
+    def to_html(self) -> str:
+        return f"<ol>{super().to_html()}</ol>"
+
+
+class Itemize(HtmlObject):
+    def __init__(self):
+        super().__init__("")
+
+    @override
+    def to_html(self) -> str:
+        return f"<ul>{super().to_html()}</ul>"
+
+
+class Item(HtmlObject):
+    def __init__(self):
+        super().__init__("")
+
+    @override
+    def to_html(self) -> str:
+        return f"<li>{super().to_html()}</li>"
 
 
 class Proof(HtmlObject):
@@ -25,6 +59,15 @@ class Section(HtmlObject):
     @override
     def to_html(self) -> str:
         return f"<h2>{self.args[0].to_html()}</h2>"
+
+
+class EmBraces(HtmlObject):
+    def __init__(self):
+        super().__init__("")
+
+    @override
+    def to_html(self) -> str:
+        return f"<i>{super().to_html()}</i>"
 
 
 class MathObject(HtmlObject):
@@ -92,6 +135,23 @@ class MathEnvironment(HtmlObject):
                 color: #0066cc;
                 padding: 5px 0;
             }}
+            .abstract {{
+                background-color: #fafafe;
+                width: 60%;
+                display: block;
+                  margin-left: auto;
+                  margin-right: auto;
+            }}
+            .my-ref {{
+                color: #cc6600;
+                cursor: pointer;
+                border-bottom: 1px dotted #cc6600;
+                position: relative;
+            }}
+
+            .my-ref:hover {{
+                background-color: #fff3e6;
+            }}
 
             summary:hover {{
                 background-color: #f0f8ff;
@@ -148,7 +208,9 @@ class ConversionChain:
                 if isinstance(arg, BraceGroup):
                     if "amsthm" in arg.contents[0]:
                         self.chain.append(TheoremConverter())
-            return HtmlObject("")
+                    if "amsmath" in arg.contents[0]:
+                        self.chain.append(AmsMathConverter())
+            return Empty()
         for converter in self.chain + self.default:
             converted = converter.convert_command(cmd)
             if converted:
@@ -176,11 +238,23 @@ class TexConversion:
         if env.name == "$$":
             return MathObject("$$")
         if env.name == "BraceGroup":
+            if isinstance(env.contents[0], TexCmd) and env.contents[0].name == "em":
+                return EmBraces()
             return HtmlObject("")
         if env.name == "BracketGroup":
             return HtmlObject("")
         if env.name == "proof":
             return Proof()
+        if env.name == "enumerate":
+            return Enumerate()
+        if env.name == "itemize":
+            return Itemize()
+        if env.name == "document":
+            return HtmlObject("")
+        if env.name == "thebibliography":
+            return HtmlObject("<h2>Bibliography</h2>")
+        if env.name == "abstract":
+            return Abstract()
         return None
 
     def convert_command(self, cmd: TexCmd) -> Optional[HtmlObject]:
@@ -189,6 +263,16 @@ class TexConversion:
             return Section()
         if cmd.name == "section*":
             return Section()
+        if (
+            cmd.name == "em"
+            and isinstance(cmd.parent, BraceGroup)
+            and cmd.parent.contents[0] == cmd
+        ):
+            return HtmlObject("")
+        if cmd.name == "item":
+            return Item()
+        if cmd.name == "documentclass":
+            return Empty()
         return None
 
     def convert_token(self, token: Token) -> Optional[HtmlObject]:

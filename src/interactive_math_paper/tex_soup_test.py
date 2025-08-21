@@ -1,6 +1,6 @@
 import sys
 from TexSoup import TexSoup, TexNode
-from TexSoup.data import TexEnv, TexCmd
+from TexSoup.data import TexEnv, TexCmd, TexArgs
 from TexSoup.utils import Token
 from pathlib import Path
 from .tex import HtmlObject, TexConversion, ConversionChain
@@ -11,15 +11,24 @@ def parse(node, converter) -> HtmlObject:
         return parse(node.expr, converter)
     if isinstance(node, TexEnv):
         html_object = converter.convert_environment(node)
+        args = node.args  # todo add test for the weird behaviour of contents
+        # todo maybe add feature request
         for arg in node.args:
             html_object.add_arg(parse(arg, converter))
+        node.args = TexArgs()
         for child in node.contents:
             html_object.add(parse(child, converter))
+        node.args = args
         return html_object
     if isinstance(node, TexCmd):
         html_object = converter.convert_command(node)
+        args = node.args
         for arg in node.args:
             html_object.add_arg(parse(arg, converter))
+        node.args = TexArgs()
+        for child in node.contents:
+            html_object.add(parse(child, converter))
+        node.args = args
         return html_object
     if isinstance(node, Token):
         html_object = converter.convert_token(node)
