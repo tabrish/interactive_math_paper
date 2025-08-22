@@ -2,7 +2,7 @@ from typing import override
 
 
 class HtmlObject:
-    reference_names = {}
+    references = {}
 
     def __init__(self, content: str = ""):
         self.content = content
@@ -12,13 +12,20 @@ class HtmlObject:
 
     @staticmethod
     def get_name(ref: str) -> str:
-        return HtmlObject.reference_names.get(ref, "???")
+        object = HtmlObject.references.get(ref, None)
+        if not object:
+            return "???"
+        return object.to_ref_label()
 
     def add(self, child: "HtmlObject"):
         child.set_parent(self)
         self.children.append(child)
 
-    def label(self, label:str):
+    def to_ref_label(self) -> str:
+        return "???"
+
+    def label(self, label: str):
+        HtmlObject.references[label] = self
         self._label = label
 
     def get_label(self) -> str:
@@ -38,9 +45,9 @@ class HtmlObject:
 
 
 class Empty(HtmlObject):
-    def __init__(self):
-        super().__init__("")
+    def __init__(self, text=""):
+        super().__init__(text)
 
     @override
     def to_html(self) -> str:
-        return ""
+        return self.content

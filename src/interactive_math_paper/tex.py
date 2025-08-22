@@ -1,16 +1,103 @@
 from typing import Optional, override
-from TexSoup.data import TexCmd, BraceGroup
+from TexSoup.data import TexCmd, BraceGroup, TexEnv
 from TexSoup.utils import Token
 from TexSoup.tokens import TC
-from interactive_math_paper.amsmath import AmsMathConverter
+from .amsmath import AmsMathConverter
 from .amsthm import TheoremConverter
 from .data import HtmlObject, Empty
+
+
+class Bibliography(HtmlObject):
+    @override
+    def to_html(self) -> str:
+        heading = "<h2>Bibliography</h2>"
+        bib = {}
+        current_bibitem = None
+        for child in self.children:
+            if isinstance(child, Bibitem):
+                current_bibitem = child.to_html()
+                bib[current_bibitem] = []
+                continue
+            if current_bibitem is None:
+                heading += child.to_html()
+                continue
+            bib[current_bibitem].append(child.to_html())
+        for key, value in bib.items():
+            content = ""
+            for v in value:
+                content += v
+            heading += f"""<div class="references">
+                <div class="reference-item">
+                    <span class="ref-label">[{key}]</span>
+                    <div class="ref-content" id="{key}">{content}</div>
+                </div>
+            </div>"""
+
+        return heading
+
+
+class Bibitem(HtmlObject):
+    @override
+    def to_html(self) -> str:
+        return self.args[0].to_html()
+
+
+class Cite(HtmlObject):
+    @override
+    def to_html(self) -> str:
+        return (
+            '<a href="#' + f'{self.args[0].to_html()}">[{self.args[0].to_html()}]</a>'
+        )
+
+
+class Title(HtmlObject):
+    @override
+    def to_html(self) -> str:
+        return ""
+
+    def _to_html(self) -> str:
+        return f"<h1>{self.args[0].to_html()}</h1>"
+
+
+class Author(HtmlObject):
+    @override
+    def to_html(self) -> str:
+        return ""
+
+    def _to_html(self) -> str:
+        return f'<div class="author">{self.args[0].to_html()}</div>'
+
+
+class Address(HtmlObject):
+    @override
+    def to_html(self) -> str:
+        return ""
+
+    def _to_html(self) -> str:
+        return f'<div class="address">{self.args[0].to_html()}</div>'
+
+
+class MakeTitle(HtmlObject):
+    def __init__(self, title: Title, authors: list[Author], address: list[Address]):
+        self.title = title
+        self.authors = authors
+        self.address = address
+
+    @override
+    def to_html(self) -> str:
+        content = self.title._to_html()
+        for author in self.authors:
+            content += author._to_html()
+        for add in self.address:
+            content += add._to_html()
+        return content
 
 
 class Abstract(HtmlObject):
     @override
     def to_html(self) -> str:
         return f'<div class="abstract"><h3>Abstract</h3>{super().to_html()}</div>'
+
 
 class Label(Empty):
     def __init__(self, label: str):
@@ -21,10 +108,15 @@ class Label(Empty):
     def set_parent(self, parent: "HtmlObject"):
         parent.label(self.data)
 
+
 class Link(HtmlObject):
     @override
     def to_html(self) -> str:
-        return f'<a href="#' + f'{self.args[0].to_html()}">{HtmlObject.get_name(self.args[0].to_html())}</a>'
+        return (
+            '<a href="#'
+            + f'{self.args[0].to_html()}">{HtmlObject.get_name(self.args[0].to_html())}</a>'
+        )
+
 
 class HtmlBraceGroup(HtmlObject):
     def __init__(self):
@@ -34,6 +126,7 @@ class HtmlBraceGroup(HtmlObject):
     @override
     def to_html(self) -> str:
         return super().to_html() if not self.visible else f"{{{super().to_html()}}}"
+
 
 class Enumerate(HtmlObject):
     def __init__(self):
@@ -75,12 +168,16 @@ class Proof(HtmlObject):
 
 
 class Section(HtmlObject):
+    counter = 0
+
     def __init__(self):
         super().__init__("")
+        Section.counter += 1
+        self.number = Section.counter
 
     @override
     def to_html(self) -> str:
-        return f"<h2>{self.args[0].to_html()}</h2>"
+        return f"<h2>{self.number} {self.args[0].to_html()}</h2>"
 
 
 class EmBraces(HtmlObject):
@@ -108,10 +205,13 @@ class MathObject(HtmlObject):
         return f" {self.delimiter}{super().to_html()}{self.delimiter} "
 
 
-class MathEnvironment(HtmlObject):
+class Root(HtmlObject):
     def __init__(self):
         super().__init__("")
         self.math_commands = ""
+        self.title = ""
+        self.author = []
+        self.address = []
 
     @override
     def to_html(self) -> str:
@@ -126,7 +226,8 @@ class MathEnvironment(HtmlObject):
         window.MathJax = {{
             tex: {{
                 inlineMath: [['$', '$']],
-                displayMath: [['$$', '$$']]
+                displayMath: [['$$', '$$']],
+                tags: "ams"
             }},
             startup: {{
                 ready: function () {{
@@ -165,7 +266,7 @@ class MathEnvironment(HtmlObject):
             }}
             .abstract {{
                 background-color: #fafafe;
-                width: 60%;
+                width: 80%;
                 display: block;
                   margin-left: auto;
                   margin-right: auto;
@@ -190,6 +291,19 @@ class MathEnvironment(HtmlObject):
                 padding: 10px 15px;
                 margin-top: 10px;
             }}
+            .popup {{
+                position: absolute;
+                background: white;
+                border: 2px solid #0066cc;
+                border-radius: 6px;
+                padding: 10px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                max-width: 300px;
+                font-size: 14px;
+                line-height: 1.4;
+                display: none;
+            }}
             h1, h2, h3 {{
                 color: #333;
             }}
@@ -209,10 +323,89 @@ class MathEnvironment(HtmlObject):
                 font-weight: bold;
                 font-style: normal;
             }}
+            .references {{
+                padding-top: 1em;
+                font-size: 0.95em;
+                line-height: 1.4;
+            }}
+
+            .reference-item {{
+                margin-bottom: 1em;
+            }}
+
+            .ref-label {{
+                font-weight: bold;
+                margin-right: 0.5em;
+                color: #333;
+            }}
+
+            .ref-content {{
+                display: inline;
+                color: #555;
+            }}
+
         </style>
             </head>
             <body>
                 {super().to_html()}
+
+                <script>
+                    const popup = document.createElement('div');
+                    popup.className = 'popup';
+                    document.body.appendChild(popup);
+
+                    // Add interactivity to all anchor tags
+                    document.querySelectorAll('a').forEach(link => {{
+                        link.addEventListener('mouseenter', function () {{
+                            const href = this.getAttribute('href');
+
+                            if (href && href.startsWith('#')) {{
+                                const targetId = href.substring(1);
+                                const targetEl = document.getElementById(targetId);
+
+                                if (targetEl) {{
+                                    popup.innerHTML = targetEl.innerHTML;
+                                    showPopup(this);
+
+                                    // Optional: process MathJax
+                                    if (window.MathJax && window.MathJax.typesetPromise) {{
+                                        MathJax.typesetPromise([popup]).catch((err) => {{
+                                            console.log('MathJax error in popup:', err);
+                                        }});
+                                    }}
+                                }}
+                            }}
+                        }});
+
+                        link.addEventListener('mouseleave', function () {{
+                            popup.style.display = 'none';
+                        }});
+                    }});
+
+                    function showPopup(element) {{
+                        popup.style.display = 'block';
+
+                        const rect = element.getBoundingClientRect();
+                        popup.style.left = rect.left + window.scrollX + 'px';
+                        popup.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+
+                        const popupRect = popup.getBoundingClientRect();
+                        if (popupRect.right > window.innerWidth) {{
+                            popup.style.left = (window.innerWidth - popupRect.width - 10 + window.scrollX) + 'px';
+                        }}
+                        if (popupRect.bottom > window.innerHeight) {{
+                            popup.style.top = (rect.top + window.scrollY - popupRect.height - 2) + 'px';
+                        }}
+                    }}
+
+                    // Hide popup when clicking outside
+                    document.addEventListener('click', function (e) {{
+                        if (!popup.contains(e.target)) {{
+                            popup.style.display = 'none';
+                        }}
+                    }});
+                </script>
+
             </body>
         </html>
         """
@@ -223,7 +416,7 @@ class ConversionChain:
         self.chain = chain
         self.default = [DefaultConversion()]
 
-    def convert_environment(self, env: MathEnvironment) -> Optional[HtmlObject]:
+    def convert_environment(self, env: TexEnv) -> Optional[HtmlObject]:
         for converter in self.chain + self.default:
             converted = converter.convert_environment(env)
             if converted:
@@ -235,7 +428,7 @@ class ConversionChain:
             for arg in cmd.args:
                 if isinstance(arg, BraceGroup):
                     if "amsthm" in arg.contents[0]:
-                        self.chain.append(TheoremConverter())
+                        self.chain.append(TheoremConverter(lambda: Section.counter))
                     if "amsmath" in arg.contents[0]:
                         self.chain.append(AmsMathConverter())
             return Empty()
@@ -257,9 +450,9 @@ class TexConversion:
     def __init__(self):
         self.tex_env = None
 
-    def convert_environment(self, env: MathEnvironment) -> Optional[HtmlObject]:
+    def convert_environment(self, env: Root) -> Optional[HtmlObject]:
         if env.name == "[tex]":
-            self.tex_env = MathEnvironment()
+            self.tex_env = Root()
             return self.tex_env
         if env.name == "$":
             return MathObject("$")
@@ -280,7 +473,7 @@ class TexConversion:
         if env.name == "document":
             return HtmlObject("")
         if env.name == "thebibliography":
-            return HtmlObject("<h2>Bibliography</h2>")
+            return Bibliography()
         if env.name == "abstract":
             return Abstract()
         return None
@@ -305,21 +498,50 @@ class TexConversion:
             self.tex_env.math_commands += str(cmd)
             return Empty()
         if cmd.name == "DeclareMathOperator":
-            assert len(cmd.args) == 2, f"declare math operator {str(cmd)} has a bad number of args"
+            assert len(cmd.args) == 2, (
+                f"declare math operator {str(cmd)} has a bad number of args"
+            )
             operator_cmd = cmd.args[0].contents[0]
             operator_text = cmd.args[1].contents[0]
-            self.tex_env.math_commands += f"\\newcommand{{{operator_cmd}}}{{\\text{{{operator_text}}}}}"
+            self.tex_env.math_commands += (
+                f"\\newcommand{{{operator_cmd}}}{{\\text{{{operator_text}}}}}"
+            )
             return Empty()
         if cmd.name == "label":
-            assert len(cmd.args) == 1, f"why does label {cmd} not have exactly one args?"
+            assert len(cmd.args) == 1, (
+                f"why does label {cmd} not have exactly one args?"
+            )
             return Label(str(cmd.args[0].contents[0]))
         if cmd.name == "ref":
             return Link()
+        if cmd.name == "author":
+            new_author = Author()
+            self.tex_env.author.append(new_author)
+            return new_author
+        if cmd.name == "address":
+            new_address = Address()
+            self.tex_env.address.append(new_address)
+            return new_address
+        if cmd.name == "title":
+            self.tex_env.title = Title()
+            return self.tex_env.title
+        if cmd.name == "maketitle":
+            return MakeTitle(
+                self.tex_env.title, self.tex_env.author, self.tex_env.address
+            )
+        if cmd.name == "cite":
+            return Cite()
+        if cmd.name == "bibitem":
+            return Bibitem()
         return None
 
     def convert_token(self, token: Token) -> Optional[HtmlObject]:
         if token.category == TC.Text:
-            return HtmlObject(token.text.replace("\n\n", "<hr>").replace(r"``", "“").replace(r"''", "”"))
+            return HtmlObject(
+                token.text.replace("\n\n", "<hr>")
+                .replace(r"``", "“")
+                .replace(r"''", "”")
+            )
         if token.category == TC.Comment:
             return HtmlObject("")
         if token.category == TC.EscapedComment:
@@ -333,7 +555,7 @@ class DefaultConversion:
     def __init__(self):
         pass
 
-    def convert_environment(self, env: MathEnvironment) -> Optional[HtmlObject]:
+    def convert_environment(self, env: Root) -> Optional[HtmlObject]:
         print(f"unknown environment {env.name} with args {env.args}")
 
         return HtmlObject("")
