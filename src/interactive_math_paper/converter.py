@@ -1,43 +1,36 @@
 import sys
-from TexSoup import TexSoup, TexNode
-from TexSoup.data import TexEnv, TexCmd, TexArgs
+from TexSoup.data import TexEnv, TexCmd
 from TexSoup.utils import Token
 from pathlib import Path
-from .tex import HtmlObject, TexConversion, ConversionChain
+from .tex import TexConversion, ConversionChain
+from .conversion import (
+    VisitResult,
+    lex_tex_source,
+    convert,
+    TexVisitor,
+    TexContext,
+    Consumed,
+)
 
 
-def parse(node, converter) -> HtmlObject:
-    if isinstance(node, TexNode):
-        return parse(node.expr, converter)
-    if isinstance(node, TexEnv):
-        html_object = converter.convert_environment(node)
-        args = node.args  # todo add test for the weird behaviour of contents
-        # todo maybe add feature request
-        for arg in node.args:
-            html_object.add_arg(parse(arg, converter))
-        node.args = TexArgs()
-        for child in node.contents:
-            html_object.add(parse(child, converter))
-        node.args = args
-        return html_object
-    if isinstance(node, TexCmd):
-        html_object = converter.convert_command(node)
-        args = node.args
-        for arg in node.args:
-            html_object.add_arg(parse(arg, converter))
-        node.args = TexArgs()
-        for child in node.contents:
-            html_object.add(parse(child, converter))
-        node.args = args
-        return html_object
-    if isinstance(node, Token):
-        html_object = converter.convert_token(node)
-        return html_object
-    raise ValueError(f"unknown object of type {type(node)}")
+class ConversionChainVisitor(TexVisitor):
+    def __init__(self, conversion_chain: ConversionChain):
+        self.conversion_chain = conversion_chain
 
+    def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
+        return VisitResult(
+            node=self.conversion_chain.convert_environment(env), consumed=Consumed.yes
+        )
 
-if __name__ == "__main__":
-    output_path = Path("html_examples/tabrish_paper.html")
+    def visit_cmd(self, cmd: TexCmd, context: TexContext) -> VisitResult:
+        return VisitResult(
+            node=self.conversion_chain.convert_command(cmd), consumed=Consumed.yes
+        )
+
+    def visit_token(self, token: Token, context: TexContext) -> VisitResult:
+        return VisitResult(
+            node=self.conversion_chain.convert_token(token), consumed=Consumed.yes
+        )
 
 
 def main_cli():
@@ -61,6 +54,10 @@ def main_cli():
         print(f"Error reading file: {e}")
         sys.exit(1)
 
-    soup = TexSoup(latex_content)
+    soup = lex_tex_source(latex_content)
     with open(output_file, "w", encoding="utf-8") as f:
-        f.write(parse(soup, ConversionChain([TexConversion()])).to_html())
+        f.write(
+            convert(
+                soup, ConversionChainVisitor(ConversionChain([TexConversion()]))
+            ).to_html()
+        )

@@ -1,14 +1,14 @@
 from typing import override
+from .conversion import HtmlNode
 
 
-class HtmlObject:
+class HtmlObject(HtmlNode):
     references = {}
 
     def __init__(self, content: str = ""):
+        super().__init__()
         self.content = content
         self._label = ""
-        self.children = []
-        self.args = []
 
     @staticmethod
     def get_name(ref: str) -> str:
@@ -17,8 +17,10 @@ class HtmlObject:
             return "???"
         return object.to_ref_label()
 
-    def add(self, child: "HtmlObject"):
-        child.set_parent(self)
+    @override
+    def add_child(self, child: HtmlNode):
+        if isinstance(child, HtmlObject):
+            child.set_parent(self)
         self.children.append(child)
 
     def to_ref_label(self) -> str:
@@ -34,9 +36,7 @@ class HtmlObject:
     def set_parent(self, parent: "HtmlObject"):
         pass
 
-    def add_arg(self, arg: "HtmlObject"):
-        self.args.append(arg)
-
+    @override
     def to_html(self) -> str:
         html = self.content
         for child in self.children:

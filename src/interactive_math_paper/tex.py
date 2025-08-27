@@ -416,14 +416,14 @@ class ConversionChain:
         self.chain = chain
         self.default = [DefaultConversion()]
 
-    def convert_environment(self, env: TexEnv) -> Optional[HtmlObject]:
+    def convert_environment(self, env: TexEnv) -> HtmlObject:
         for converter in self.chain + self.default:
             converted = converter.convert_environment(env)
             if converted:
                 return converted
-        return None
+        raise Exception("default conversion must be missing")
 
-    def convert_command(self, cmd: TexCmd) -> Optional[HtmlObject]:
+    def convert_command(self, cmd: TexCmd) -> HtmlObject:
         if cmd.name == "usepackage":
             for arg in cmd.args:
                 if isinstance(arg, BraceGroup):
@@ -436,14 +436,14 @@ class ConversionChain:
             converted = converter.convert_command(cmd)
             if converted:
                 return converted
-        return None
+        raise Exception("default conversion must be missing")
 
-    def convert_token(self, token: Token) -> Optional[HtmlObject]:
+    def convert_token(self, token: Token) -> HtmlObject:
         for converter in self.chain + self.default:
             converted = converter.convert_token(token)
             if converted:
                 return converted
-        return None
+        raise Exception("default conversion must be missing")
 
 
 class TexConversion:
