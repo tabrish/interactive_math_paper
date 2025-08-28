@@ -3,11 +3,13 @@ from TexSoup.data import TexEnv, TexCmd
 from TexSoup.utils import Token
 from pathlib import Path
 from .tex import TexConversion, ConversionChain
+from .visitors import DefaultTexVisitor, MathModeVisitor
 from .conversion import (
     VisitResult,
     lex_tex_source,
     convert,
     TexVisitor,
+    TexReader,
     TexContext,
     Consumed,
 )
@@ -58,6 +60,10 @@ def main_cli():
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(
             convert(
-                soup, ConversionChainVisitor(ConversionChain([TexConversion()]))
+                soup,
+                TexReader(
+                    [MathModeVisitor(), DefaultTexVisitor()],
+                    ConversionChainVisitor(ConversionChain([TexConversion()])),
+                ),
             ).to_html()
         )

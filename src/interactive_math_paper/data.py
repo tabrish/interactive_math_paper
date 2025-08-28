@@ -21,6 +21,9 @@ class HtmlObject(HtmlNode):
     def add_child(self, child: HtmlNode):
         if isinstance(child, HtmlObject):
             child.set_parent(self)
+        else:
+            assert child.parent is None
+            child.parent = self
         self.children.append(child)
 
     def to_ref_label(self) -> str:
