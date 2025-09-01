@@ -11,7 +11,7 @@ def lex_tex_source(tex: str) -> TexNode:
 
 
 class HtmlNode(ABC):
-    def __init__(self):
+    def __init__(self, head: Optional["HtmlNode"] = None):
         self.args = []
         self.children = []
         self.parent = None
@@ -43,6 +43,12 @@ class HtmlNode(ABC):
 
     def global_js(self) -> str:
         return ""
+
+
+class EmptyNode(HtmlNode):
+    @override
+    def to_html(self):
+        return self.children_to_html()
 
 
 class TexContext:
@@ -92,8 +98,20 @@ class VisitResult:
             consumed=Consumed.yes if parse_children else Consumed.also_children,
         )
 
+    @staticmethod
+    def hidden(parse_children: bool = True) -> "VisitResult":
+        return VisitResult(
+            node = EmptyNode(),
+            consumed = Consumed.yes if parse_children else Consumed.also_children,
+        )
+
 
 class TexVisitor(ABC):
+    visitors = []
+
+    def __init__(self):
+        TexVisitor.visitors.append(self)
+
     @abstractmethod
     def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
         pass
@@ -105,6 +123,12 @@ class TexVisitor(ABC):
     @abstractmethod
     def visit_token(self, token: Token, context: TexContext) -> VisitResult:
         pass
+
+    def global_css(self) -> str:
+        return ""
+
+    def global_js(self) -> str:
+        return ""
 
 
 @dataclass
@@ -120,19 +144,29 @@ class DocumentNode(HtmlNode):
 
 
 class TexReader:
-    def __init__(self, tex_visitors: list[TexVisitor], fallback: TexVisitor):
-        self.chain = tex_visitors + [fallback]
+    def __init__(
+        self,
+        tex_visitors: list[TexVisitor],
+        fallback: TexVisitor,
+        packages: dict[str, TexVisitor],
+    ):
+        self.chain = [fallback] + tex_visitors
         self.context = TexContext()
+        self.packages = packages
 
     def parse_packages(self, node):
         if not isinstance(node, TexCmd):
             return
-        if node.name == "usepackage":
-            print(node.name, node.__dict__)
+        if node.name != "usepackage":
+            return
+        for arg in node.args:
+            for key, value in self.packages.items():
+                if key in str(arg):
+                    self.chain.append(value)
 
     def convert(self, node: Union[TexExpr, Token]) -> ReaderResult:
         self.parse_packages(node)
-        for visitor in self.chain:
+        for visitor in self.chain[::-1]:
             if isinstance(node, TexEnv):
                 result = visitor.visit_env(node, self.context)
             elif isinstance(node, TexCmd):

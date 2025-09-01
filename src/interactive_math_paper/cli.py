@@ -3,7 +3,7 @@ from TexSoup.data import TexEnv, TexCmd
 from TexSoup.utils import Token
 from pathlib import Path
 from .tex import TexConversion, ConversionChain
-from .visitors import DefaultTexVisitor, MathModeVisitor
+from .visitors import DefaultTexVisitor, MathModeVisitor, AmsMathVisitor, TheoremVisitor
 from .conversion import (
     VisitResult,
     lex_tex_source,
@@ -64,6 +64,10 @@ def main_cli():
                 TexReader(
                     [MathModeVisitor(), DefaultTexVisitor()],
                     ConversionChainVisitor(ConversionChain([TexConversion()])),
+                    {
+                        "amsthm": TheoremVisitor(),
+                        "amsmath": AmsMathVisitor(),
+                    },
                 ),
             ).to_html()
         )
