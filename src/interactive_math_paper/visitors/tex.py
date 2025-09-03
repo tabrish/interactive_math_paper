@@ -3,6 +3,45 @@ from TexSoup.data import TexCmd, TexEnv, Token
 from TexSoup.tokens import TC
 from ..conversion import HtmlNode, TexVisitor, VisitResult, TexContext, EmptyNode
 
+
+class HtmlBraces(HtmlNode):
+    def __init__(self, visible: bool):
+        super().__init__()
+        self.visible = visible
+
+    @override
+    def to_html(self) -> str:
+        if any(isinstance(child, EmBraces) for child in self.children):
+            return f"<i>{self.children_to_html()}</i>"
+        return (
+            self.children_to_html()
+            if not self.visible
+            else f"{{{self.children_to_html()}}}"
+        )
+
+
+class EmBraces(EmptyNode): ...
+
+
+class Label(EmptyNode):
+    def __init__(self, label_id: str):
+        super().__init__()
+        self.label_id = label_id
+
+
+class Ref(HtmlNode):
+    def __init__(self, ref_resolution):
+        super().__init__()
+        self.ref_resolution = ref_resolution
+
+    @override
+    def to_html(self) -> str:
+        return (
+            '<a href="#'
+            + f'{self.args[0].to_html()}">{self.ref_resolution(self.args[0].to_html())}</a>'
+        )
+
+
 class Root(HtmlNode):
     def __init__(self):
         super().__init__()
@@ -130,11 +169,12 @@ class Root(HtmlNode):
         </html>
         """
 
-class BracketGroup(EmptyNode):
-    ...
 
-class Document(EmptyNode):
-    ...
+class BracketGroup(EmptyNode): ...
+
+
+class Document(EmptyNode): ...
+
 
 class Bibliography(HtmlNode):
     @override
@@ -271,6 +311,7 @@ class DefaultTexVisitor(TexVisitor):
     @override
     def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
         if env.name == "[tex]":
+            context.register("labels", {})
             return VisitResult.use(Root())
         if env.name == "proof":
             return VisitResult.use(Proof())
@@ -286,6 +327,8 @@ class DefaultTexVisitor(TexVisitor):
             return VisitResult.use(BracketGroup())
         if env.name == "document":
             return VisitResult.use(Document())
+        if env.name == "BraceGroup":
+            return VisitResult.use(HtmlBraces(context.get("math_mode") or False))
         return VisitResult.pass_by()
 
     @override
@@ -327,6 +370,22 @@ class DefaultTexVisitor(TexVisitor):
             return VisitResult.use(Cite())
         if cmd.name == "bibitem":
             return VisitResult.use(Bibitem())
+        if cmd.name == "ref":
+            return VisitResult.use(
+                Ref(lambda key: (context.get("labels") or {}).get(key, "??"))
+            )
+        if cmd.name == "label":
+            label_id = cmd.args[0].contents[0]
+            context.get("labels")[label_id] = context.get("tag") or "??"
+            return VisitResult.use(Label(label_id))
+        if cmd.name == "em":
+            return VisitResult.use(EmBraces())
+        if cmd.name == "documentclass":
+            return VisitResult.hidden(False)
+        if cmd.name == "usepackage":
+            return VisitResult.hidden(False)
+        if cmd.name == "hspace":
+            return VisitResult.hidden(False)
         return VisitResult.pass_by()
 
     @override
@@ -349,42 +408,42 @@ class DefaultTexVisitor(TexVisitor):
 
     @override
     def global_js(self) -> str:
-        return f"""<script>
-            window.onload = () => {{
+        return """<script>
+            window.onload = () => {
             console.log("yay we are done loading");
             const popup = document.createElement('div');
             popup.className = 'popup';
             document.body.appendChild(popup);
 
             // Add interactivity to all anchor tags
-            document.querySelectorAll('a').forEach(link => {{
-                link.addEventListener('mouseenter', function () {{
+            document.querySelectorAll('a').forEach(link => {
+                link.addEventListener('mouseenter', function () {
                     const href = this.getAttribute('href');
 
-                    if (href && href.startsWith('#')) {{
+                    if (href && href.startsWith('#')) {
                         const targetId = href.substring(1);
                         const targetEl = document.getElementById(targetId);
 
-                        if (targetEl) {{
+                        if (targetEl) {
                             popup.innerHTML = targetEl.innerHTML;
                             showPopup(this);
 
                             // Optional: process MathJax
-                            if (window.MathJax && window.MathJax.typesetPromise) {{
-                                MathJax.typesetPromise([popup]).catch((err) => {{
+                            if (window.MathJax && window.MathJax.typesetPromise) {
+                                MathJax.typesetPromise([popup]).catch((err) => {
                                     console.log('MathJax error in popup:', err);
-                                }});
-                            }}
-                        }}
-                    }}
-                }});
+                                });
+                            }
+                        }
+                    }
+                });
 
-                link.addEventListener('mouseleave', function () {{
+                link.addEventListener('mouseleave', function () {
                     popup.style.display = 'none';
-                }});
-            }});
+                });
+            });
 
-            function showPopup(element) {{
+            function showPopup(element) {
                 popup.style.display = 'block';
 
                 const rect = element.getBoundingClientRect();
@@ -392,18 +451,18 @@ class DefaultTexVisitor(TexVisitor):
                 popup.style.top = (rect.bottom + window.scrollY + 2) + 'px';
 
                 const popupRect = popup.getBoundingClientRect();
-                if (popupRect.right > window.innerWidth) {{
+                if (popupRect.right > window.innerWidth) {
                     popup.style.left = (window.innerWidth - popupRect.width - 10 + window.scrollX) + 'px';
-                }}
-                if (popupRect.bottom > window.innerHeight) {{
+                }
+                if (popupRect.bottom > window.innerHeight) {
                     popup.style.top = (rect.top + window.scrollY - popupRect.height - 2) + 'px';
-                }}
-            }}
+                }
+            }
 
             // Hide popup when clicking outside
-            document.addEventListener('click', function (e) {{
-                if (!popup.contains(e.target)) {{
+            document.addEventListener('click', function (e) {
+                if (!popup.contains(e.target)) {
                     popup.style.display = 'none';
-                }}
-            }});}}
+                }
+            });}
         </script>"""

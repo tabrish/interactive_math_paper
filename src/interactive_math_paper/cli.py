@@ -1,38 +1,12 @@
 import sys
-from TexSoup.data import TexEnv, TexCmd
-from TexSoup.utils import Token
 from pathlib import Path
-from .tex import TexConversion, ConversionChain
 from .visitors import DefaultTexVisitor, MathModeVisitor, AmsMathVisitor, TheoremVisitor
 from .conversion import (
-    VisitResult,
     lex_tex_source,
     convert,
-    TexVisitor,
     TexReader,
-    TexContext,
-    Consumed,
+    ErrorVisitor,
 )
-
-
-class ConversionChainVisitor(TexVisitor):
-    def __init__(self, conversion_chain: ConversionChain):
-        self.conversion_chain = conversion_chain
-
-    def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
-        return VisitResult(
-            node=self.conversion_chain.convert_environment(env), consumed=Consumed.yes
-        )
-
-    def visit_cmd(self, cmd: TexCmd, context: TexContext) -> VisitResult:
-        return VisitResult(
-            node=self.conversion_chain.convert_command(cmd), consumed=Consumed.yes
-        )
-
-    def visit_token(self, token: Token, context: TexContext) -> VisitResult:
-        return VisitResult(
-            node=self.conversion_chain.convert_token(token), consumed=Consumed.yes
-        )
 
 
 def main_cli():
@@ -63,7 +37,7 @@ def main_cli():
                 soup,
                 TexReader(
                     [MathModeVisitor(), DefaultTexVisitor()],
-                    ConversionChainVisitor(ConversionChain([TexConversion()])),
+                    ErrorVisitor(),
                     {
                         "amsthm": TheoremVisitor(),
                         "amsmath": AmsMathVisitor(),

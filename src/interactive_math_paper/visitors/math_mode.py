@@ -27,7 +27,6 @@ class MathRoot(HtmlNode):
 class MathModeVisitor(TexVisitor):
     math_commands = ""
 
-
     @override
     def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
         if env.name == "$" or env.name == "$$":
@@ -41,7 +40,7 @@ class MathModeVisitor(TexVisitor):
             return VisitResult.use(TextNode(str(cmd) + " "), False)
         if cmd.name == "renewcommand" or cmd.name == "newcommand" or cmd.name == "def":
             MathModeVisitor.math_commands += str(cmd)
-            return VisitResult.hidden()
+            return VisitResult.hidden(False)
         if cmd.name == "DeclareMathOperator":
             assert len(cmd.args) == 2, (
                 f"declare math operator {str(cmd)} has a bad number of args"
@@ -51,7 +50,7 @@ class MathModeVisitor(TexVisitor):
             MathModeVisitor.math_commands += (
                 f"\\newcommand{{{operator_cmd}}}{{\\text{{{operator_text}}}}}"
             )
-            return VisitResult.hidden()
+            return VisitResult.hidden(False)
         return VisitResult.pass_by()
 
     @override

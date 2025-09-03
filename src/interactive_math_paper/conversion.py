@@ -101,8 +101,8 @@ class VisitResult:
     @staticmethod
     def hidden(parse_children: bool = True) -> "VisitResult":
         return VisitResult(
-            node = EmptyNode(),
-            consumed = Consumed.yes if parse_children else Consumed.also_children,
+            node=EmptyNode(),
+            consumed=Consumed.yes if parse_children else Consumed.also_children,
         )
 
 
@@ -215,3 +215,17 @@ def convert(node: Union[TexNode, TexExpr, Token], visitor: TexReader) -> HtmlNod
         visitor.pop()
     node.args = args
     return html_node
+
+
+class ErrorVisitor(TexVisitor):
+    @override
+    def visit_cmd(self, cmd: TexCmd, context: TexContext) -> VisitResult:
+        raise ValueError(f"{cmd} {context.stack}")
+
+    @override
+    def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
+        raise ValueError(f"{env} {context.stack}")
+
+    @override
+    def visit_token(self, token: Token, context: TexContext) -> VisitResult:
+        raise ValueError(f"{token} {context.stack}")
