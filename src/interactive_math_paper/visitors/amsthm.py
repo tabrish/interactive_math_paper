@@ -1,14 +1,15 @@
 from typing import override, Optional
 from TexSoup.data import TexEnv, TexCmd, Token
 from ..conversion import TexVisitor, VisitResult, TexContext, HtmlNode
-from .tex import Label
+from .tex import Label, Tag
 
 
 class TheoremEnv(HtmlNode):
-    def __init__(self, label: str, tag: str):
+    def __init__(self, number: int, label: str, tag: str):
         super().__init__()
         self.label = label
         self.tag = tag
+        self.number = number
 
     def _get_label(self) -> Optional[str]:
         for child in self.children:
@@ -37,22 +38,24 @@ class TheoremVisitor(TexVisitor):
     @override
     def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
         if env.name in self.labels:
-            if TheoremVisitor.previous_tag != (context.get("tag") or "??"):
-                TheoremVisitor.previous_tag = context.get("tag")
-                context.register_env("theorem_number", 0)
-            theorem_number = (context.get("theorem_number") or 0) + 1
-            context.register_env("theorem_number", theorem_number)
-            theorem_tag = context.get("tag") or ""
+            last_env = context.first(TheoremEnv)
+            next_number = last_env.number + 1 if last_env else 1
+            if TheoremVisitor.previous_tag != context.first(Tag):
+                TheoremVisitor.previous_tag = context.first(Tag)
+                next_number = 1
+            print(context.first(Tag))
+            theorem_tag = (context.first(Tag) or Tag("")).tag
             if theorem_tag == "??":
                 theorem_tag = ""
             theorem_tag = (
-                f"{theorem_tag}.{theorem_number}"
+                f"{theorem_tag}.{next_number}"
                 if theorem_tag != ""
-                else str(theorem_number)
+                else str(next_number)
             )
-            context.register("tag", theorem_tag)
+            environment = TheoremEnv(next_number, self.labels[env.name], theorem_tag)
+            environment.add_child(Tag(theorem_tag))
 
-            return VisitResult.use(TheoremEnv(self.labels[env.name], theorem_tag))
+            return VisitResult.use(environment)
         return VisitResult.pass_by()
 
     @override

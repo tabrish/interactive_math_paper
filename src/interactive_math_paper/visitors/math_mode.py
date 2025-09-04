@@ -1,7 +1,7 @@
 from typing import override
 from TexSoup.data import TexEnv, TexCmd, Token
 from ..conversion import TexVisitor, VisitResult, TexContext, HtmlNode
-from .tex import TextNode
+from .tex import TextNode, HtmlBraces
 
 
 class MathModeNode(HtmlNode):
@@ -14,29 +14,21 @@ class MathModeNode(HtmlNode):
         return f"{self.boundary}{self.children_to_html()}{self.boundary}"
 
 
-class MathRoot(HtmlNode):
-    def __init__(self):
-        super().__init__()
-        self.math_commands = ""
-
-    @override
-    def to_html(self) -> str:
-        return ""
-
-
 class MathModeVisitor(TexVisitor):
     math_commands = ""
 
     @override
     def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
         if env.name == "$" or env.name == "$$":
-            context.register("math_mode", True)
             return VisitResult.use(MathModeNode(env.name))
+        if context.surrounding(MathModeNode):
+            if env.name == "BraceGroup":
+                return VisitResult.use(HtmlBraces(True))
         return VisitResult.pass_by()
 
     @override
     def visit_cmd(self, cmd: TexCmd, context: TexContext) -> VisitResult:
-        if context.get("math_mode") or cmd.name == "eqref":
+        if (context.surrounding(MathModeNode) is not None) or cmd.name == "eqref":
             return VisitResult.use(TextNode(str(cmd) + " "), False)
         if cmd.name == "renewcommand" or cmd.name == "newcommand" or cmd.name == "def":
             MathModeVisitor.math_commands += str(cmd)

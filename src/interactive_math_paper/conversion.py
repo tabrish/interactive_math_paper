@@ -1,4 +1,4 @@
-from typing import Optional, Union, Any, override
+from typing import Optional, Union, override, TypeVar, Type
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -10,8 +10,8 @@ def lex_tex_source(tex: str) -> TexNode:
     return TexSoup(tex)
 
 
-class HtmlNode(ABC):
-    def __init__(self, head: Optional["HtmlNode"] = None):
+class HtmlNode:
+    def __init__(self):
         self.args = []
         self.children = []
         self.parent = None
@@ -34,9 +34,8 @@ class HtmlNode(ABC):
             html += child.to_html()
         return html
 
-    @abstractmethod
     def to_html(self) -> str:
-        pass
+        return ""
 
     def global_css(self) -> str:
         return ""
@@ -45,35 +44,45 @@ class HtmlNode(ABC):
         return ""
 
 
+T = TypeVar("T")
+
+
+class TexContext:
+    def __init__(self, nodes: list[HtmlNode], parents: list[HtmlNode]):
+        self.nodes = nodes
+        self.parents = parents
+
+    def copy(self) -> "TexContext":
+        return TexContext(self.nodes.copy(), self.parents.copy())
+
+    def surrounding(self, type: Type[T]) -> Optional[T]:
+        for node in self.parents[::-1]:
+            if isinstance(node, type):
+                return node
+        return None
+
+    def all(self, type: Type[T]) -> list[T]:
+        output = []
+        for node in self.nodes[::-1]:
+            if isinstance(node, type):
+                output.append(node)
+        return output
+
+    def first(self, type: Type[T]) -> Optional[T]:
+        for node in self.nodes[::-1]:
+            if isinstance(node, type):
+                return node
+        return None
+
+    def stack_trace(self):
+        print("stack trace")
+        print(f"{self.nodes[::-1]}")
+
+
 class EmptyNode(HtmlNode):
     @override
     def to_html(self):
         return self.children_to_html()
-
-
-class TexContext:
-    def __init__(self):
-        self.stack = [{}]
-
-    def register_env(self, key: str, value: Any):
-        assert len(self.stack) > 1, "stack is to short to register"
-        self.stack[-2][key] = value
-
-    def register(self, key: str, value: Any):
-        self.stack[-1][key] = value
-
-    def get(self, key: str) -> Optional[Any]:
-        for dictionary in self.stack[::-1]:
-            item = dictionary.get(key, None)
-            if item is not None:
-                return item
-        return None
-
-    def push(self):
-        self.stack.append({})
-
-    def pop(self):
-        self.stack.pop()
 
 
 class Consumed(Enum):
@@ -151,7 +160,6 @@ class TexReader:
         packages: dict[str, TexVisitor],
     ):
         self.chain = [fallback] + tex_visitors
-        self.context = TexContext()
         self.packages = packages
 
     def parse_packages(self, node):
@@ -164,15 +172,15 @@ class TexReader:
                 if key in str(arg):
                     self.chain.append(value)
 
-    def convert(self, node: Union[TexExpr, Token]) -> ReaderResult:
+    def convert(self, node: Union[TexExpr, Token], context: TexContext) -> ReaderResult:
         self.parse_packages(node)
         for visitor in self.chain[::-1]:
             if isinstance(node, TexEnv):
-                result = visitor.visit_env(node, self.context)
+                result = visitor.visit_env(node, context)
             elif isinstance(node, TexCmd):
-                result = visitor.visit_cmd(node, self.context)
+                result = visitor.visit_cmd(node, context)
             elif isinstance(node, Token):
-                result = visitor.visit_token(node, self.context)
+                result = visitor.visit_token(node, context)
             else:
                 raise ValueError(f"node is of unknown type {type(node)}")
             if result.consumed == Consumed.no:
@@ -185,34 +193,38 @@ class TexReader:
                 return ReaderResult(node=result.node, consume_children=True)
         raise ValueError("oops no error handling yet")
 
-    def push(self) -> "TexReader":
-        self.context.push()
-        return self
 
-    def pop(self) -> "TexReader":
-        self.context.pop()
-        return self
-
-
-def convert(node: Union[TexNode, TexExpr, Token], visitor: TexReader) -> HtmlNode:
+def convert(
+    node: Union[TexNode, TexExpr, Token],
+    visitor: TexReader,
+    context: Optional[TexContext] = None,
+) -> HtmlNode:
+    if context is None:
+        context = TexContext([], [])
     # todo make iterative
     if isinstance(node, TexNode):
-        return convert(node.expr, visitor)
+        return convert(node.expr, visitor, context)
     if not isinstance(node, TexExpr) and not isinstance(node, Token):
         raise ValueError(f"unknown object of type {type(node)}")
-    result = visitor.convert(node)
+    result = visitor.convert(node, context)
     if result.consume_children or isinstance(node, Token):
         return result.node
     html_node = result.node
+    context.nodes.append(html_node)
+    context.nodes.extend(html_node.args)
+    context.nodes.extend(html_node.children)
+    context.parents.append(html_node)
     args = node.args  # todo add test for the weird behaviour of contents
     # todo maybe add feature request
     for arg in node.args:
-        html_node.add_argument(convert(arg, visitor.push()))
-        visitor.pop()
+        new_node = convert(arg, visitor, context.copy())
+        context.nodes.append(new_node)
+        html_node.add_argument(new_node)
     node.args = TexArgs()
     for child in node.contents:
-        html_node.add_child(convert(child, visitor.push()))
-        visitor.pop()
+        new_node = convert(child, visitor, context.copy())
+        context.nodes.append(new_node)
+        html_node.add_child(new_node)
     node.args = args
     return html_node
 
@@ -220,12 +232,15 @@ def convert(node: Union[TexNode, TexExpr, Token], visitor: TexReader) -> HtmlNod
 class ErrorVisitor(TexVisitor):
     @override
     def visit_cmd(self, cmd: TexCmd, context: TexContext) -> VisitResult:
-        raise ValueError(f"{cmd} {context.stack}")
+        context.stack_trace()
+        raise ValueError(f"{cmd} {context}")
 
     @override
     def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
-        raise ValueError(f"{env} {context.stack}")
+        context.stack_trace()
+        raise ValueError(f"{env} {context}")
 
     @override
     def visit_token(self, token: Token, context: TexContext) -> VisitResult:
-        raise ValueError(f"{token} {context.stack}")
+        context.stack_trace()
+        raise ValueError(f"{token} {context}")

@@ -36,7 +36,7 @@ def main_cli():
             convert(
                 soup,
                 TexReader(
-                    [MathModeVisitor(), DefaultTexVisitor()],
+                    [DefaultTexVisitor(), MathModeVisitor()],
                     ErrorVisitor(),
                     {
                         "amsthm": TheoremVisitor(),

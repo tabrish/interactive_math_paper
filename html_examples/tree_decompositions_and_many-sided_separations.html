@@ -4,32 +4,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Interactive Mathematical Paper</title>
         <head>
-        
-        <!-- MathJax for mathematical notation -->
-        <script>
-
-        window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$']],
-                displayMath: [['$$', '$$']],
-                tags: "ams"
-            },
-            startup: {
-                ready: function () {
-                    MathJax.startup.defaultReady();
-                    const {STATE} = MathJax._.core.MathItem;
-                          MathJax.tex2mml(String.raw`
-                            \newcommand{\tw}{\text{tw}}\renewcommand{\S}{\mathcal{S}}\def\dd{\hbox{-}}
-                          `);
-                    // Process math after page loads
-                    MathJax.typesetPromise().then(() => {
-                        console.log('MathJax rendering complete');
-                    });
-                }
-            }
-        };
-        </script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
         <script>
             window.onload = () => {
             console.log("yay we are done loading");
@@ -88,6 +62,32 @@
                 }
             });}
         </script>
+        <!-- MathJax for mathematical notation -->
+        <script>
+
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                tags: "ams"
+            },
+            startup: {
+                ready: function () {
+                    MathJax.startup.defaultReady();
+                    const {STATE} = MathJax._.core.MathItem;
+                          MathJax.tex2mml(String.raw`
+                            \newcommand{\tw}{\text{tw}}\renewcommand{\S}{\mathcal{S}}\def\dd{\hbox{-}}
+                          `);
+                    // Process math after page loads
+                    MathJax.typesetPromise().then(() => {
+                        console.log('MathJax rendering complete');
+                    });
+                }
+            }
+        };
+        </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+        
 
         <style>
             body {
@@ -191,8 +191,8 @@
         </style>
             </head>
             <body>
-                <h1>Tree decompositions and many-sided separations</h1><div class="author">Tara Abrishami $^{\ast \dagger }$</div><div class="address">$^{\ast }$Princeton University, Princeton, NJ, USA</div><div class="address">$^{\dagger }$ Supported by NSF Grant DMS-1763817 and
-     NSF-EPSRC Grant DMS-2120644.</div><div class="abstract"><h3>Abstract</h3>
+                <h1>Tree decompositions and many-sided separations</h1><div class="author">Tara Abrishami $^{\ast \dagger }$</div><div class="address">$^{\dagger }$ Supported by NSF Grant DMS-1763817 and
+     NSF-EPSRC Grant DMS-2120644.</div><div class="address">$^{\ast }$Princeton University, Princeton, NJ, USA</div><div class="abstract"><h3>Abstract</h3>
     A <i> separation</i> of a graph $G$ is a partition $(A_1, A_2, C)$ of $V(G)$ such that $A_1$ is anticomplete to $A_2$. A classic result from Robertson and Seymour's Graph Minors Project states that there is a correspondence between tree decompositions and laminar collections of separations. A <i> many-sided separation</i> of a graph $G$ is a partition $(A_1, \dots, A_k, C)$ of $V(G)$ such that $A_i$ is anticomplete to $A_j$ for all $1 \leq  i < j \leq  k$. In this note, we show a correspondence between tree decompositions with a certain parity property, called <i> deciduous</i> tree decompositions, and laminar collections of many-sided separations.
 </div><h2> 1 Introduction</h2>
 A <i> tree decomposition</i>$(T, \chi )$ of a graph $G$ consists of a tree $T$ and a map $\chi : V(T) \to  2^{V(G)}$, satisfying the following properties:
