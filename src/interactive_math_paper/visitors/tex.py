@@ -1,4 +1,4 @@
-from typing import override, Optional
+from typing import override
 from TexSoup.data import TexCmd, TexEnv, Token
 from TexSoup.tokens import TC
 from ..conversion import HtmlNode, TexVisitor, VisitResult, TexContext, EmptyNode
@@ -27,6 +27,12 @@ class Label(EmptyNode):
     def __init__(self, label_id: str):
         super().__init__()
         self.label_id = label_id
+
+
+class Tag(EmptyNode):
+    def __init__(self, tag: str):
+        super().__init__()
+        self.tag = tag
 
 
 class Ref(HtmlNode):
@@ -273,6 +279,7 @@ class Itemize(HtmlNode):
 
 class TextNode(HtmlNode):
     def __init__(self, text: str):
+        super().__init__()
         self.text = text
         self.parent = None
 
@@ -296,22 +303,29 @@ class Proof(HtmlNode):
         )
 
 
-class Section(HtmlNode):
-    def __init__(self, number: Optional[int] = None):
-        super().__init__()
+class Section(Tag):
+    def __init__(self, number: int):
+        super().__init__(str(number))
         self.number = number
 
     @override
     def to_html(self) -> str:
-        number_text = f" {self.number} " if self.number is not None else ""
+        number_text = f" {self.number} "
         return f"<h2>{number_text}{self.args[0].to_html()}</h2>"
 
 
+class SectionAst(HtmlNode):
+    @override
+    def to_html(self) -> str:
+        return f"<h2>{self.args[0].to_html()}</h2>"
+
+
 class DefaultTexVisitor(TexVisitor):
+    labels = {}
+
     @override
     def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
         if env.name == "[tex]":
-            context.register("labels", {})
             return VisitResult.use(Root())
         if env.name == "proof":
             return VisitResult.use(Proof())
@@ -328,19 +342,17 @@ class DefaultTexVisitor(TexVisitor):
         if env.name == "document":
             return VisitResult.use(Document())
         if env.name == "BraceGroup":
-            return VisitResult.use(HtmlBraces(context.get("math_mode") or False))
+            return VisitResult.use(HtmlBraces(False))
         return VisitResult.pass_by()
 
     @override
     def visit_cmd(self, cmd: TexCmd, context: TexContext) -> VisitResult:
         if cmd.name == "section":
-            current_section_number = context.get("section") or 0
-            context.register_env("section", current_section_number + 1)
-            context.register_env("tag", str(current_section_number + 1))
-            return VisitResult.use(Section(current_section_number + 1))
+            section_number = (context.first(Section) or Section(0)).number + 1
+            section = Section(section_number)
+            return VisitResult.use(section)
         if cmd.name == "section*":
-            context.register_env("tag", "??")
-            return VisitResult.use(Section())
+            return VisitResult.use(SectionAst())
         if cmd.name == "item":
             return VisitResult.use(Item())
         if cmd.name == "pageref":
@@ -348,22 +360,17 @@ class DefaultTexVisitor(TexVisitor):
                 "it does not make sense to use pageref when converting to html"
             )
         if cmd.name == "author":
-            new_author = Author()
-            context.register_env("author", (context.get("author") or []) + [new_author])
-            return VisitResult.use(new_author)
+            return VisitResult.use(Author())
         if cmd.name == "address":
-            new_address = Address()
-            context.register_env(
-                "address", (context.get("address") or []) + [new_address]
-            )
-            return VisitResult.use(new_address)
+            return VisitResult.use(Address())
         if cmd.name == "title":
-            context.register_env("title", Title())
-            return VisitResult.use(context.get("title"))
+            return VisitResult.use(Title())
         if cmd.name == "maketitle":
             return VisitResult.use(
                 MakeTitle(
-                    context.get("title"), context.get("author"), context.get("address")
+                    context.first(Title) or Title(),
+                    context.all(Author),
+                    context.all(Address),
                 )
             )
         if cmd.name == "cite":
@@ -372,11 +379,11 @@ class DefaultTexVisitor(TexVisitor):
             return VisitResult.use(Bibitem())
         if cmd.name == "ref":
             return VisitResult.use(
-                Ref(lambda key: (context.get("labels") or {}).get(key, "??"))
+                Ref(lambda key: DefaultTexVisitor.labels.get(key, "??"))
             )
         if cmd.name == "label":
             label_id = cmd.args[0].contents[0]
-            context.get("labels")[label_id] = context.get("tag") or "??"
+            DefaultTexVisitor.labels[label_id] = (context.first(Tag) or Tag("??")).tag
             return VisitResult.use(Label(label_id))
         if cmd.name == "em":
             return VisitResult.use(EmBraces())
