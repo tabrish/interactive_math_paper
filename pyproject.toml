@@ -7,6 +7,7 @@ authors = [
     {name = "Hanno von Bergen"},
 ]
 dependencies = [
+    "pdoc>=15.0.4",
     "texsoup>=0.3.1",
 ]
 
