@@ -15,6 +15,9 @@ class MathModeNode(HtmlNode):
 
 
 class MathModeVisitor(TexVisitor):
+    def __init__(self):
+        super().__init__("math_mode")
+
     math_commands = ""
 
     @override

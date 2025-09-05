@@ -5,6 +5,9 @@ from .tex import TextNode
 
 
 class AmsMathVisitor(TexVisitor):
+    def __init__(self):
+        super().__init__("amsmath")
+
     @override
     def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
         if env.name == "equation":

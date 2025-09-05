@@ -1,0 +1,12 @@
+.theorem {
+    background-color: #f9f9f9;
+    border-left: 4px solid #333;
+    padding: 15px;
+    margin: 15px 0;
+    font-style: italic;
+}
+
+.theorem-label {
+    font-weight: bold;
+    font-style: normal;
+}
