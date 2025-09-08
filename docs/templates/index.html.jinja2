@@ -1,0 +1,27 @@
+{% set root_module_name = false %}
+{% extends "default/index.html.jinja2" %}
+{% block nav %}
+    {{super()}}
+    {% block attribution %}
+
+    {% endblock %}
+
+    {% block nav_members %}
+    {% endblock %}
+
+    {% block examples %}
+            <h2>Example Papers</h2>
+            <ul>
+                <li><a href="./example_papers/tree_decompositions_and_many-sided_separations.html">Tree Decompositions and Many Sided Separations</a></li>
+            </ul>
+    {% endblock %}
+
+    {% block attribution2 %}
+        <a class="attribution" title="pdoc: Python API documentation generator" href="https://pdoc.dev" target="_blank">
+            built with <span class="visually-hidden">pdoc</span><img
+                alt="pdoc logo"
+                src="data:image/svg+xml,
+                        {%- filter urlencode %}{% include "resources/pdoc-logo.svg" %}{% endfilter %}"/>
+        </a>
+    {% endblock %}
+{% endblock %}
