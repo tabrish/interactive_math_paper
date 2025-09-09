@@ -57,7 +57,9 @@ class Root(HtmlNode):
         global_js = ""
         global_css = ""
         for visitor in TexVisitor.visitors:
+            global_js += visitor.load_js()
             global_js += visitor.global_js()
+            global_css += visitor.load_css()
             global_css += visitor.global_css()
 
         return f"""
@@ -69,102 +71,6 @@ class Root(HtmlNode):
         {global_js}
 
         <style>
-            body {{
-                font-family: "Computer Modern", "Latin Modern", serif;
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-                line-height: 1.6;
-                background-color: #fefefe;
-            }}
-            details {{
-                margin: 15px 0;
-            }}
-            summary {{
-                font-weight: bold;
-                cursor: pointer;
-                color: #0066cc;
-                padding: 5px 0;
-            }}
-            .abstract {{
-                background-color: #fafafe;
-                width: 80%;
-                display: block;
-                  margin-left: auto;
-                  margin-right: auto;
-            }}
-            .my-ref {{
-                color: #cc6600;
-                cursor: pointer;
-                border-bottom: 1px dotted #cc6600;
-                position: relative;
-            }}
-
-            .my-ref:hover {{
-                background-color: #fff3e6;
-            }}
-
-            summary:hover {{
-                background-color: #f0f8ff;
-            }}
-            .proof-content {{
-                background-color: #fafafa;
-                border-left: 3px solid #ddd;
-                padding: 10px 15px;
-                margin-top: 10px;
-            }}
-            .popup {{
-                position: absolute;
-                background: white;
-                border: 2px solid #0066cc;
-                border-radius: 6px;
-                padding: 10px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1000;
-                max-width: 300px;
-                font-size: 14px;
-                line-height: 1.4;
-                display: none;
-            }}
-            h1, h2, h3 {{
-                color: #333;
-            }}
-            hr {{
-              margin-top: 10px;
-              border: none;
-            }}
-            .theorem {{
-                background-color: #f9f9f9;
-                border-left: 4px solid #333;
-                padding: 15px;
-                margin: 15px 0;
-                font-style: italic;
-            }}
-
-            .theorem-label {{
-                font-weight: bold;
-                font-style: normal;
-            }}
-            .references {{
-                padding-top: 1em;
-                font-size: 0.95em;
-                line-height: 1.4;
-            }}
-
-            .reference-item {{
-                margin-bottom: 1em;
-            }}
-
-            .ref-label {{
-                font-weight: bold;
-                margin-right: 0.5em;
-                color: #333;
-            }}
-
-            .ref-content {{
-                display: inline;
-                color: #555;
-            }}
             {global_css}
 
         </style>
@@ -321,6 +227,9 @@ class SectionAst(HtmlNode):
 
 
 class DefaultTexVisitor(TexVisitor):
+    def __init__(self):
+        super().__init__("tex")
+
     labels = {}
 
     @override
@@ -416,60 +325,5 @@ class DefaultTexVisitor(TexVisitor):
     @override
     def global_js(self) -> str:
         return """<script>
-            window.onload = () => {
-            console.log("yay we are done loading");
-            const popup = document.createElement('div');
-            popup.className = 'popup';
-            document.body.appendChild(popup);
 
-            // Add interactivity to all anchor tags
-            document.querySelectorAll('a').forEach(link => {
-                link.addEventListener('mouseenter', function () {
-                    const href = this.getAttribute('href');
-
-                    if (href && href.startsWith('#')) {
-                        const targetId = href.substring(1);
-                        const targetEl = document.getElementById(targetId);
-
-                        if (targetEl) {
-                            popup.innerHTML = targetEl.innerHTML;
-                            showPopup(this);
-
-                            // Optional: process MathJax
-                            if (window.MathJax && window.MathJax.typesetPromise) {
-                                MathJax.typesetPromise([popup]).catch((err) => {
-                                    console.log('MathJax error in popup:', err);
-                                });
-                            }
-                        }
-                    }
-                });
-
-                link.addEventListener('mouseleave', function () {
-                    popup.style.display = 'none';
-                });
-            });
-
-            function showPopup(element) {
-                popup.style.display = 'block';
-
-                const rect = element.getBoundingClientRect();
-                popup.style.left = rect.left + window.scrollX + 'px';
-                popup.style.top = (rect.bottom + window.scrollY + 2) + 'px';
-
-                const popupRect = popup.getBoundingClientRect();
-                if (popupRect.right > window.innerWidth) {
-                    popup.style.left = (window.innerWidth - popupRect.width - 10 + window.scrollX) + 'px';
-                }
-                if (popupRect.bottom > window.innerHeight) {
-                    popup.style.top = (rect.top + window.scrollY - popupRect.height - 2) + 'px';
-                }
-            }
-
-            // Hide popup when clicking outside
-            document.addEventListener('click', function (e) {
-                if (!popup.contains(e.target)) {
-                    popup.style.display = 'none';
-                }
-            });}
         </script>"""

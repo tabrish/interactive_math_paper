@@ -3,6 +3,8 @@ Welcome! We are building a python script to convert latex files to html, with th
  - if a word is defined, hovering over that word anywhere in the paper displays the definition
  - if a theorem/lemma/etc is referenced later in a paper, hovering over “Theorem X” displays the statement of Theorem X
 
+Check out our examples of converted papers in the Documentation!
+
 ## Installation
 
 Clone the repository and then install the python module using

@@ -32,7 +32,7 @@ class TheoremVisitor(TexVisitor):
     previous_tag = None
 
     def __init__(self):
-        super().__init__()
+        super().__init__("amsthm")
         self.labels = {}
 
     @override
@@ -43,7 +43,6 @@ class TheoremVisitor(TexVisitor):
             if TheoremVisitor.previous_tag != context.first(Tag):
                 TheoremVisitor.previous_tag = context.first(Tag)
                 next_number = 1
-            print(context.first(Tag))
             theorem_tag = (context.first(Tag) or Tag("")).tag
             if theorem_tag == "??":
                 theorem_tag = ""

@@ -1,12 +1,13 @@
 [project]
 name = "interactive-math-paper"
-version = "0.0.4"
+version = "0.1.0"
 requires-python = ">=3.12"
 authors = [
     {name = "Tabrish"},
     {name = "Hanno von Bergen"},
 ]
 dependencies = [
+    "pdoc>=15.0.4",
     "texsoup>=0.3.1",
 ]
 

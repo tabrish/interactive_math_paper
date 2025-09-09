@@ -1,3 +1,4 @@
+import os
 from typing import Optional, Union, override, TypeVar, Type
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -118,8 +119,9 @@ class VisitResult:
 class TexVisitor(ABC):
     visitors = []
 
-    def __init__(self):
+    def __init__(self, id: str):
         TexVisitor.visitors.append(self)
+        self.id = id
 
     @abstractmethod
     def visit_env(self, env: TexEnv, context: TexContext) -> VisitResult:
@@ -138,6 +140,20 @@ class TexVisitor(ABC):
 
     def global_js(self) -> str:
         return ""
+
+    def load_css(self) -> str:
+        path = os.path.join("assets", "css", f"{self.id}.css")
+        if not os.path.exists(path):
+            return ""
+        with open(path, "r") as f:
+            return f.read()
+
+    def load_js(self) -> str:
+        path = os.path.join("assets", "js", f"{self.id}.js")
+        if not os.path.exists(path):
+            return ""
+        with open(path, "r") as f:
+            return f"<script>{f.read()}</script>"
 
 
 @dataclass
@@ -230,6 +246,9 @@ def convert(
 
 
 class ErrorVisitor(TexVisitor):
+    def __init__(self):
+        super().__init__("error")
+
     @override
     def visit_cmd(self, cmd: TexCmd, context: TexContext) -> VisitResult:
         context.stack_trace()
